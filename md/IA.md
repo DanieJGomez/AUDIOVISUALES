@@ -17,7 +17,7 @@ ARQUITECTURA OBLIGATORIA
 FUNCIONES
 1. Programación por fecha, con primera reunión y segundo servicio independientes.
 2. Puestos: cámara principal, cámara #1, cámara #2, fotografía, pantallas/transmisión/letras y dirección de escena.
-3. Dirección de escena permite asignar responsables distintos durante alabanza y prédica.
+3. Dirección de escena permite asignar responsables distintos durante alabanza y prédica. la ida es que todos los puestos esten dispuestos a rtación entre el mismo servicio pero diferente parte "etre alabanza y predica"
 4. Impedir que una persona esté asignada simultáneamente a puestos incompatibles. “Todo el servicio” entra en conflicto con cualquier segmento de la misma reunión; alabanza y prédica pueden tener responsables diferentes.
 5. Personas administrables sin cambiar el código.
 6. Tareas especiales por reunión, responsable y descripción.
@@ -25,7 +25,6 @@ FUNCIONES
 8. Vestimenta del día con descripción completa del color, selector visual y observaciones.
 9. Plano interactivo con altar, púlpito, batería, piano, coro, columnas, cámaras, fotografía, pantallas y mezcla de imagen.
 10. Cada marcador del plano muestra puesto, persona asignada y segmento. Representar los encuadres de las cámaras con conos de visión aproximados y orientaciones ajustables.
-11. La ubicación de pantallas debe ser entre cámara #2 y mezcla de imagen, más cerca de mezcla de imagen. Las posiciones reales se calibrarán con el dibujo proporcionado por el usuario; no inventar medidas exactas.
 12. Actualizaciones visibles para todos los dispositivos conectados mediante escuchas en tiempo real, sin polling constante.
 13. Indicadores de guardado, conexión, errores y cambios concurrentes. No afirmar que se guardó hasta recibir confirmación.
 14. Probar varios dispositivos y evitar que dos editores sobrescriban silenciosamente sus cambios.

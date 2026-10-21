@@ -69,14 +69,6 @@ button {
   padding: 18px;
 }
 
-.notice {
-  padding: 11px 13px;
-  border: 1px solid #ead6a8;
-  border-radius: 12px;
-  background: #fff8e7;
-  color: #624b1e;
-  font-size: 13px;
-}
 
 .tabs {
   display: flex;
@@ -107,6 +99,7 @@ button {
 }
 
 .card {
+
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 16px;
