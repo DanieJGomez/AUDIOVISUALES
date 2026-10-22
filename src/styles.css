@@ -122,6 +122,11 @@ background:#fff;
 padding:10px 11px;
 color:var(--ink);
 }
+.time-selectors{
+display:grid;
+grid-template-columns:1fr 1fr 1fr;
+gap:8px;
+}
 .field textarea{
 min-height:76px;
 resize:vertical;
