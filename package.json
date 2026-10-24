@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "firebase": "^13.0.0"
+    "firebase": "^13.1.0"
   },
   "devDependencies": {
     "vite": "^7.0.0"

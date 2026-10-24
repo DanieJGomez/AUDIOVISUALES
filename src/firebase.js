@@ -1,17 +1,22 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getDatabase } from 'firebase/database';
+// src/firebase.js
 
-// Configuración del proyecto Firebase.
-// Completa estos valores con la configuración de la aplicación web de Firebase.
-export const firebaseConfig = {
-  apiKey: '',
-  authDomain: '',
-  databaseURL: '',
-  projectId: '',
-  appId: '',
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getDatabase } from "firebase/database";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCZKbU0bLOdTpre1vt62lw7QcBJm0oBe0",
+  authDomain: "cmb-audiovisuales.firebaseapp.com",
+  databaseURL: "https://cmb-audiovisuales-default-rtdb.firebaseio.com",
+  projectId: "cmb-audiovisuales",
+  storageBucket: "cmb-audiovisuales.firebasestorage.app",
+  messagingSenderId: "902248003924",
+  appId: "1:902248003924:web:ab2f90f26efafdaa1c70c1",
 };
 
-export const firebaseApp = initializeApp(firebaseConfig);
-export const auth = getAuth(firebaseApp);
-export const database = getDatabase(firebaseApp);
+const app = initializeApp(firebaseConfig);
+
+export const auth = getAuth(app);
+export const db = getDatabase(app);
+
+export default app;
