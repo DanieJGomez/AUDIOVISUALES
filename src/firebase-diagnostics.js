@@ -3,7 +3,8 @@ import {
   signOutUser,
   subscribeToAuthState,
 } from './auth.js';
-import { readData, writeData } from './database.js';
+import { get, ref, runTransaction } from 'firebase/database';
+import { db } from './firebase.js';
 
 const TEST_PATH = 'diagnostics/connectionTest';
 const TEST_SOURCE = 'firebase-diagnostics';
@@ -57,7 +58,8 @@ $('readTest').addEventListener('click', async () => {
   log('Leyendo nodo de diagnóstico...');
 
   try {
-    const value = await readData(TEST_PATH);
+    const snapshot = await get(ref(db, TEST_PATH));
+    const value = snapshot.exists() ? snapshot.val() : null;
     log(value === null
       ? 'Lectura remota correcta: el nodo está vacío.'
       : `Lectura remota correcta: ${JSON.stringify(value)}`);
@@ -76,23 +78,48 @@ $('writeTest').addEventListener('click', async () => {
   log('Escribiendo nodo de diagnóstico...');
 
   try {
-    await writeData(TEST_PATH, payload);
-    log(`Escritura remota correcta: ${JSON.stringify(payload)}`);
+    const result = await runTransaction(ref(db, TEST_PATH), (current) => {
+      // El diagnóstico nunca debe reemplazar un valor que ya exista.
+      return current === null ? payload : undefined;
+    });
+
+    if (!result.committed) {
+      log('Escritura cancelada: el nodo ya contiene datos y no se modificó.');
+      return;
+    }
+
+    const verification = await get(ref(db, TEST_PATH));
+    const storedValue = verification.exists() ? verification.val() : null;
+    if (JSON.stringify(storedValue) !== JSON.stringify(payload)) {
+      log('La transacción se confirmó, pero la lectura posterior no coincide con la marca escrita.');
+      return;
+    }
+
+    log(`Escritura y lectura de comprobación correctas: ${JSON.stringify(storedValue)}`);
   } catch (error) {
     log(`Escritura remota rechazada: ${describeError(error)}`);
   }
 });
 
 $('deleteTest').addEventListener('click', async () => {
-  if (!confirm('¿Borrar solo el nodo diagnostics/connectionTest?')) {
+  if (!confirm('¿Borrar el nodo de prueba solo si aún contiene la marca firebase-diagnostics?')) {
     return;
   }
 
   log('Borrando nodo de diagnóstico...');
 
   try {
-    await writeData(TEST_PATH, null);
-    log('Nodo de diagnóstico borrado.');
+    const result = await runTransaction(ref(db, TEST_PATH), (current) => {
+      return current?.source === TEST_SOURCE ? null : undefined;
+    });
+
+    if (result.committed) {
+      log('Nodo de prueba borrado.');
+    } else if (result.snapshot.exists()) {
+      log('El nodo no contiene la marca de prueba esperada y no se modificó.');
+    } else {
+      log('El nodo ya estaba vacío.');
+    }
   } catch (error) {
     log(`No se pudo borrar el nodo: ${describeError(error)}`);
   }

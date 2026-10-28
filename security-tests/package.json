@@ -1,0 +1,16 @@
+{
+  "name": "cmb-audiovisuales-rtdb-rules-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test rtdb-rules.test.mjs",
+    "test:emulator": "firebase emulators:exec --project demo-cmb-audiovisual-security --only database --config ../firebase.emulator.json \"npm test\""
+  },
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.0.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^14.0.0"
+  }
+}
