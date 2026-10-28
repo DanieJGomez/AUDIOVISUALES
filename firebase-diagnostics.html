@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Diagnóstico Firebase · CMB Audiovisuales</title>
+<style>
+    :root {
+        color-scheme: light;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: #1f2a24;
+        background: #f1f5f2;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; }
+    main { max-width: 760px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: 1.6rem; }
+    h2 { margin: 0 0 12px; font-size: 1.1rem; }
+    section {
+        background: #fff;
+        border: 1px solid #d7e0da;
+        border-radius: 12px;
+        padding: 18px;
+        margin-top: 16px;
+    }
+    p { margin: 0 0 12px; line-height: 1.5; }
+    code { background: #eef2ef; padding: 2px 6px; border-radius: 4px; }
+    .warning {
+        border-left: 4px solid #b7791f;
+        background: #fffaf0;
+        padding: 12px 14px;
+        border-radius: 8px;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    button {
+        border: 1px solid #244a38;
+        background: #244a38;
+        color: #fff;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font: inherit;
+        cursor: pointer;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    button.secondary { background: transparent; color: #244a38; }
+    button.danger { border-color: #9b2c2c; background: #9b2c2c; }
+    pre {
+        min-height: 120px;
+        margin: 0;
+        padding: 14px;
+        overflow: auto;
+        border-radius: 8px;
+        background: #172b25;
+        color: #e8f1eb;
+        font-size: .85rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .muted { color: #52635a; font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+    <h1>Diagnóstico Firebase</h1>
+    <p class="warning">
+        Herramienta local de prueba. No forma parte de la aplicación, no se incluye
+        en el build de producción y no debe publicarse. El único nodo que modifica
+        es <code>diagnostics/connectionTest</code>.
+    </p>
+
+    <section>
+        <h2>1. Autenticación</h2>
+        <p id="authStatus">Comprobando estado de sesión...</p>
+        <div class="actions">
+            <button id="signIn">Iniciar sesión con Google</button>
+            <button id="signOut" class="secondary" disabled>Cerrar sesión</button>
+        </div>
+        <p class="muted">
+            El UID que aparece arriba es el que se debe autorizar manualmente en
+            <code>access/admins/&lt;uid&gt;</code> o <code>access/editors/&lt;uid&gt;</code>.
+        </p>
+    </section>
+
+    <section>
+        <h2>2. Nodo de prueba</h2>
+        <p>Ruta: <code>diagnostics/connectionTest</code></p>
+        <div class="actions">
+            <button id="readTest" class="secondary">Leer nodo</button>
+            <button id="writeTest" disabled>Escribir prueba</button>
+            <button id="deleteTest" class="danger" disabled>Borrar nodo</button>
+        </div>
+    </section>
+
+    <section>
+        <h2>3. Resultado</h2>
+        <pre id="log" aria-live="polite"></pre>
+    </section>
+</main>
+<script type="module" src="/src/firebase-diagnostics.js"></script>
+</body>
+</html>

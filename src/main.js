@@ -1,3 +1,5 @@
+import { MEETINGS, getMeetingLabel } from './meetings.js';
+
 const roles = [
     {
         id: 'mainCamera',
@@ -68,8 +70,16 @@ const initial = {
     }
 };
 
+function cloneAssignments(source) {
+    const assignments = source && typeof source === 'object' ? source : {};
+
+    return Object.fromEntries(
+        MEETINGS.map(({ id }) => [id, { ...(assignments[id] || {}) }])
+    );
+}
+
 let state = {
-    assignments: JSON.parse(JSON.stringify(initial)),
+    assignments: cloneAssignments(initial),
     people: [
         'Daniel P',
         'Juan Pablo',
@@ -146,8 +156,20 @@ function meetingKey() {
     return $('meeting').value;
 }
 
+function assignmentsFor(key) {
+    if (!state.assignments || typeof state.assignments !== 'object') {
+        state.assignments = {};
+    }
+    if (!state.assignments[key] || typeof state.assignments[key] !== 'object') {
+        state.assignments[key] = {};
+    }
+
+    return state.assignments[key];
+}
+
 function renderAssignments() {
     let key = meetingKey();
+    const assignments = assignmentsFor(key);
     $('assignments').innerHTML = '';
 
     roles.forEach(r => {
@@ -173,9 +195,9 @@ function renderAssignments() {
             sel.appendChild(o);
         });
 
-        sel.value = state.assignments[key][r.id] || '';
+        sel.value = assignments[r.id] || '';
         sel.addEventListener('change', () => {
-            state.assignments[key][r.id] = sel.value;
+            assignments[r.id] = sel.value;
             renderMap();
             $('saveStatus').textContent = 'Cambios pendientes de guardar en este dispositivo.';
         });
@@ -455,7 +477,7 @@ function showMarkerDetail() {
     });
 
     const q = document.createElement('p');
-    q.textContent = 'Servicio: ' + (meetingKey() === 'first' ? 'Primera reunión' : 'Segundo servicio');
+    q.textContent = 'Reunión: ' + getMeetingLabel(meetingKey());
     b.appendChild(q);
 }
 
@@ -529,7 +551,7 @@ $('saveBtn').addEventListener('click', () => {
 $('resetBtn').addEventListener('click', () => {
     if (confirm('¿Restablecer los datos de ejemplo?')) {
         state = {
-            assignments: JSON.parse(JSON.stringify(initial)),
+            assignments: cloneAssignments(initial),
             people: [
                 'Juan Pablo',
                 'Liseth',
@@ -593,7 +615,14 @@ try {
     if (saved) {
         const d = JSON.parse(saved);
 
-        if (d.state) state = d.state;
+        if (d.state && typeof d.state === 'object') {
+            state = {
+                ...d.state,
+                assignments: cloneAssignments(d.state.assignments),
+                people: Array.isArray(d.state.people) ? d.state.people : state.people,
+                tasks: Array.isArray(d.state.tasks) ? d.state.tasks : []
+            };
+        }
         if (d.date) $('serviceDate').value = d.date;
         if (d.arrival) setArrivalTime(d.arrival);
         if (d.dress) $('dress').value = d.dress;

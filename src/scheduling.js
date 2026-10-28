@@ -3,15 +3,14 @@ import {
   subscribeToData,
   writeData,
 } from './database.js';
-
-const validMeetings = new Set(['first', 'second']);
+import { MEETING_IDS, isMeetingId } from './meetings.js';
 
 function schedulePath(date, meeting) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     throw new TypeError('La fecha debe tener el formato YYYY-MM-DD.');
   }
-  if (!validMeetings.has(meeting)) {
-    throw new TypeError('La reunión debe ser "first" o "second".');
+  if (!isMeetingId(meeting)) {
+    throw new TypeError(`La reunión debe ser una de: ${MEETING_IDS.join(', ')}.`);
   }
   return `schedules/${date}/${meeting}`;
 }
