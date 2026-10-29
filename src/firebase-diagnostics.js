@@ -1,5 +1,5 @@
 import {
-  signInWithGoogle,
+  signInWithEmailAndPasswordUser,
   signOutUser,
   subscribeToAuthState,
 } from './auth.js';
@@ -27,6 +27,8 @@ function setSignedIn(user) {
     ? `Sesión iniciada como ${user.email || 'usuario sin correo'} · UID: ${user.uid}`
     : 'Sin sesión iniciada.';
   $('signIn').disabled = Boolean(user);
+  $('editorEmail').disabled = Boolean(user);
+  $('editorPassword').disabled = Boolean(user);
   $('signOut').disabled = !user;
   $('writeTest').disabled = !user;
   $('deleteTest').disabled = !user;
@@ -35,10 +37,11 @@ function setSignedIn(user) {
 subscribeToAuthState(setSignedIn);
 
 $('signIn').addEventListener('click', async () => {
-  log('Abriendo inicio de sesión con Google...');
+  log('Iniciando sesión con correo y contraseña...');
 
   try {
-    await signInWithGoogle();
+    await signInWithEmailAndPasswordUser($('editorEmail').value.trim(), $('editorPassword').value);
+    $('editorPassword').value = '';
     log('Inicio de sesión completado.');
   } catch (error) {
     log(`No se pudo iniciar sesión: ${describeError(error)}`);

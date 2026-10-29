@@ -1,0 +1,61 @@
+[debug] [2026-10-29T00:12:57.977Z] ----------------------------------------------------------------------
+[debug] [2026-10-29T00:12:57.980Z] Command:       C:\Program Files\nodejs\node.exe D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\firebase-tools\lib\bin\firebase.js emulators:exec --project demo-cmb-audiovisual-security --only database --config ../firebase.emulator.json npm test
+[debug] [2026-10-29T00:12:57.981Z] CLI Version:   14.27.0
+[debug] [2026-10-29T00:12:57.981Z] Platform:      win32
+[debug] [2026-10-29T00:12:57.981Z] Node Version:  v22.22.0
+[debug] [2026-10-29T00:12:57.981Z] Time:          Wed Oct 28 2026 19:12:57 GMT-0500 (hora estándar de Colombia)
+[debug] [2026-10-29T00:12:57.982Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-10-29T00:12:57.984Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-10-29T00:12:58.384Z] *** [apiv2] error from fetch(https://firebase-public.firebaseio.com/cli.json, {"headers":{},"method":"GET"}): FetchError: request to https://firebase-public.firebaseio.com/cli.json failed, reason: 
+[warn] !  Unable to fetch the CLI MOTD and remote config. This is not a fatal error, but may indicate an issue with your network connection. 
+[debug] [2026-10-29T00:12:58.385Z] Failed to fetch MOTD FirebaseError: Failed to make request to https://firebase-public.firebaseio.com/cli.json
+[debug] [2026-10-29T00:12:58.506Z] java version "25.0.4.1" 2026-08-18 LTS
+Java(TM) SE Runtime Environment (build 25.0.4.1+1-LTS-5)
+Java HotSpot(TM) 64-Bit Server VM (build 25.0.4.1+1-LTS-5, mixed mode, sharing)
+
+[debug] [2026-10-29T00:12:58.520Z] Parsed Java major version: 25
+[info] i  emulators: Starting emulators: database {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: database"}}
+[info] i  emulators: Detected demo project ID "demo-cmb-audiovisual-security", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail. {"metadata":{"emulator":{"name":"hub"},"message":"Detected demo project ID \"demo-cmb-audiovisual-security\", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail."}}
+[debug] [2026-10-29T00:12:58.529Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-10-29T00:12:58.530Z] assigned listening specs for emulators {"user":{"database":[{"address":"127.0.0.1","family":"IPv4","port":9100}],"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2026-10-29T00:12:58.534Z] Emulator locator file path: C:\Users\DELL\AppData\Local\Temp\hub-demo-cmb-audiovisual-security.json
+[debug] [2026-10-29T00:12:58.535Z] [hub] writing locator at C:\Users\DELL\AppData\Local\Temp\hub-demo-cmb-audiovisual-security.json
+[debug] [2026-10-29T00:12:58.541Z] No OAuth tokens found
+[debug] [2026-10-29T00:12:58.541Z] No OAuth tokens found
+[debug] [2026-10-29T00:12:58.542Z] Unable to refresh auth: not yet authenticated.
+[debug] [2026-10-29T00:12:58.542Z] Failed to retrieve default database instance: {"name":"FirebaseError","children":[],"exit":2,"message":"Failed to get Firebase project demo-cmb-audiovisual-security. Please make sure the project exists and your account has permission to access it.","original":{"name":"FirebaseError","children":[],"exit":1,"message":"Unable to refresh auth: not yet authenticated.","status":500},"status":500} {"metadata":{"emulator":{"name":"database"},"message":"Failed to retrieve default database instance: {\"name\":\"FirebaseError\",\"children\":[],\"exit\":2,\"message\":\"Failed to get Firebase project demo-cmb-audiovisual-security. Please make sure the project exists and your account has permission to access it.\",\"original\":{\"name\":\"FirebaseError\",\"children\":[],\"exit\":1,\"message\":\"Unable to refresh auth: not yet authenticated.\",\"status\":500},\"status\":500}"}}
+[debug] [2026-10-29T00:12:58.542Z] database rules config:  [{"instance":"demo-cmb-audiovisual-security-default-rtdb","rules":"D:\\Repositorios - GIt\\AUDIOVISUALES\\database.rules.proposed.json"}]
+[info] i  database: downloading firebase-database-emulator-v4.11.2.jar... {"metadata":{"emulator":{"name":"database"},"message":"downloading firebase-database-emulator-v4.11.2.jar..."}}
+[debug] [2026-10-29T00:12:58.553Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] i  emulators: Shutting down emulators. {"metadata":{"emulator":{"name":"hub"},"message":"Shutting down emulators."}}
+[info] i  database: Stopping Database Emulator {"metadata":{"emulator":{"name":"database"},"message":"Stopping Database Emulator"}}
+[info] i  hub: Stopping emulator hub {"metadata":{"emulator":{"name":"hub"},"message":"Stopping emulator hub"}}
+[debug] [2026-10-29T00:12:58.556Z] Emulator locator file path: C:\Users\DELL\AppData\Local\Temp\hub-demo-cmb-audiovisual-security.json
+[debug] [2026-10-29T00:12:58.560Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[debug] [2026-10-29T00:12:58.564Z] Error: EPERM: operation not permitted, mkdir 'C:\Users\DELL\.cache\firebase\emulators'
+    at Object.mkdirSync (node:fs:1377:26)
+    at module.exports.makeDirSync (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\fs-extra\lib\mkdirs\make-dir.js:23:13)
+    at downloadEmulator (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\firebase-tools\lib\emulator\download.js:21:8)
+    at Object.start (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\firebase-tools\lib\emulator\downloadableEmulators.js:396:51)
+    at DatabaseEmulator.start (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\firebase-tools\lib\emulator\databaseEmulator.js:51:38)
+    at EmulatorRegistry.start (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\firebase-tools\lib\emulator\registry.js:19:24)
+    at startEmulator (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\firebase-tools\lib\emulator\controller.js:296:44)
+    at Object.startAll (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\firebase-tools\lib\emulator\controller.js:505:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async emulatorExec (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\firebase-tools\lib\emulator\commandUtils.js:298:35)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-10-29T00:12:59.346Z] Error: EPERM: operation not permitted, mkdir 'C:\Users\DELL\.config\configstore'
+    at Object.mkdirSync (node:fs:1377:26)
+    at module.exports.sync (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\make-dir\index.js:114:6)
+    at set all (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\configstore\index.js:59:12)
+    at Configstore.delete (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\configstore\index.js:101:12)
+    at process.<anonymous> (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\firebase-tools\lib\bin\cli.js:65:45)
+    at process.emit (node:events:531:35)
+    at process.emit (node:domain:489:12)
+    at process.exit (node:internal/process/per_thread:240:15)
+    at Timeout._onTimeout (D:\Repositorios - GIt\AUDIOVISUALES\security-tests\node_modules\firebase-tools\lib\errorOut.js:20:17)
+    at listOnTimeout (node:internal/timers:588:17)
+[error] 
+[error] Error: An unexpected error has occurred.

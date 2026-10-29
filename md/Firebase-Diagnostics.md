@@ -1,193 +1,68 @@
-# Reglas y prueba controlada de Firebase
+# Firebase: esquema privado y proyeccion publica
 
-## Estado local
+## Estado
 
-`src/firebase.js` contiene una configuración cliente para el proyecto
-`cmb-audiovisuales`, incluida una URL de Realtime Database. `src/auth.js`
-implementa el flujo de Google Authentication. El código local confirma la
-intención de configuración, pero no demuestra que Realtime Database exista, que
-Google esté habilitado en Firebase Authentication ni que `localhost` esté
-autorizado en la consola.
+`database.rules.json` sigue denegando toda lectura y escritura. `firebase.json` apunta a ese archivo. `database.rules.proposed.json` es solo una propuesta local; no se publico ni se probo contra Firebase remoto. El cliente de `src/firebase.js` no demuestra que RTDB exista o que Email/Password este habilitado.
 
-`database.rules.json`, el archivo que referencia `firebase.json`, conserva las
-reglas seguras de denegación total. La propuesta está aislada en
-[`database.rules.proposed.json`](../database.rules.proposed.json) y no se ha
-publicado. No apuntes `firebase.json` a ese borrador ni lo despliegues sin una
-revisión y aprobación explícitas.
+## Rutas y contrato de programacion
 
-La página `firebase-diagnostics.html` escribe en
-`diagnostics/connectionTest` mediante una transacción que solo crea el nodo si
-está vacío, luego relee y compara el valor. La eliminación solo actúa si
-`source` sigue siendo `firebase-diagnostics`.
+La fuente canonica que usan `src/scheduling.js` y `src/main.js` es:
 
-## Propuesta de reglas
+- Privada: `schedules/<fecha>/<reunion>`.
+- Proyeccion: `publicData/schedules/<fecha>/<reunion>`.
 
-El borrador completo está en `database.rules.proposed.json`:
+El registro privado contiene `assignments`, `people`, `tasks`, `arrival`, `dress`, `dressColor` y `notes`. Al guardarlo se agregan `updatedAt` y `updatedBy`. Las asignaciones y la lista de personas contienen nombres; las notas y tareas son texto libre; el UID identifica al editor. Esos campos permanecen privados.
+
+La proyeccion publica admite solo `published` y `assignments` (si no hay puestos asignados, RTDB puede omitir el objeto vacio):
 
 ```json
 {
-  "rules": {
-    ".read": false,
-    ".write": false,
-    "publicData": {
-      ".read": true,
-      ".write": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)"
-    },
-    "access": {
-      ".read": "auth != null && root.child('access/admins').child(auth.uid).val() === true",
-      ".write": "auth != null && root.child('access/admins').child(auth.uid).val() === true"
-    },
-    "diagnostics": {
-      "connectionTest": {
-        ".read": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)",
-        ".write": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)",
-        ".validate": "newData.hasChildren(['ok', 'timestamp', 'source']) && newData.child('ok').isBoolean() && newData.child('ok').val() === true && newData.child('timestamp').isString() && newData.child('timestamp').val().length > 0 && newData.child('timestamp').val().length <= 24 && newData.child('timestamp').val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$/) && newData.child('source').isString() && newData.child('source').val() === 'firebase-diagnostics'",
-        "ok": { ".validate": true },
-        "timestamp": { ".validate": true },
-        "source": { ".validate": true },
-        "$other": {
-          ".validate": false
-        }
-      }
-    }
+  "published": false,
+  "assignments": {
+    "camera1": "Nombre aprobado"
   }
 }
 ```
 
-### Qué autoriza
+`assignments` solo acepta los puestos `mainCamera`, `camera1`, `camera2`, `photo`, `lyrics`, `stageFirst` y `stageSermon`, con valores string de hasta 80 caracteres. `lyrics` representa el puesto combinado de transmisión, pantallas y letras; `stageFirst` y `stageSermon` permiten responsables distintos para dirección de escena durante alabanza y prédica. No se proyectan `people`, `tasks`, horarios, vestimenta, notas, fechas de edicion ni UID. La fecha y la reunion forman parte de la ruta.
 
-- En la raíz, `.read: false` y `.write: false` deniegan operaciones en la raíz.
-  No se definen permisos para `schedules`, `assignments` ni otras rutas antiguas;
-  esas rutas siguen denegadas hasta un diseño posterior.
-- `publicData` es la única rama con lectura pública. Debe almacenar únicamente
-  información apta para cualquier visitante. Administradores y editores
-  autenticados pueden escribir en esa rama.
-- `access` solo puede leerse o escribirse con un UID autenticado cuya entrada en
-  `access/admins/<uid>` sea exactamente `true`. Los editores no pueden cambiar su
-  propio rol ni conceder acceso a otros.
-- Solo `diagnostics/connectionTest` recibe permisos de lectura y escritura. Se
-  requiere un usuario autenticado y que su UID tenga valor booleano `true` en
-  `access/admins/<uid>` o `access/editors/<uid>`.
-- La validación requiere exactamente tres campos: `ok` booleano con valor `true`,
-  `timestamp` string no vacío de hasta 24 caracteres con formato ISO UTC
-  `YYYY-MM-DDTHH:mm:ss.sssZ`, y `source` string exactamente igual a
-  `firebase-diagnostics`. Las tres claves válidas están declaradas como hijos
-  estáticos; el comodín `"$other"` con `.validate: false` rechaza cualquier otro
-  campo. Ese formato coincide con `new Date().toISOString()`
-  usado por `src/firebase-diagnostics.js` para fechas dentro del rango habitual
-  de cuatro dígitos de año.
-- Realtime Database no evalúa `.validate` al borrar (`newData` nulo). Por tanto,
-  la validación de forma no impide eliminar el registro; el `.write` de
-  `connectionTest` sigue exigiendo autenticación y UID autorizado.
+Los nombres asignados tambien son datos personales. La proyeccion queda `published: false` por defecto. Un administrador debe confirmar explicitamente que publica los nombres de esa reunion. Si no se aprueba su publicacion, debe permanecer sin publicar. Los usuarios anonimos solo pueden leer el registro cuando `published` sea `true`; los editores y administradores pueden leer borradores.
 
-### Herencia de permisos
+`publicData/members`, `publicData/positions`, `publicData/map`, `venueMap` y las otras rutas no tienen permisos en la propuesta: no hay contrato local suficiente para exponerlas. `src/map.js` y `src/assignments.js` definen rutas heredadas (`venueMap` y `schedules/<fecha>/<reunion>/assignments/<puesto>`), pero no se importan en la interfaz actual. La ruta de asignaciones permanece bajo el permiso de su reunion privada.
 
-En Realtime Database, un `.read` o `.write` concedido en un nodo también autoriza
-esa operación en sus descendientes y no puede ser revocado por una regla más
-profunda. Por eso la propuesta no concede lectura/escritura en `/` ni en
-`/diagnostics`: los permisos diagnósticos están en `/diagnostics/connectionTest`.
-Una concesión en `/publicData` se limita a esa rama. Una concesión de escritura
-en `/access` es amplia dentro de esa rama, pero únicamente para administradores.
-Las reglas de `.validate` no conceden acceso y no se heredan; validan los datos
-no nulos en la ruta donde están declaradas.
+## Coherencia y conflictos
 
-El patrón `"$other"` para rechazar claves adicionales y la excepción de
-validación al borrar están descritos en la documentación oficial de Firebase
-([reglas de Realtime Database](https://firebase.google.com/docs/database/security/rules-conditions)).
+`schedules` es la fuente canonica. El editor compara su version con la transaccion remota antes de guardarla. La proyeccion es una vista derivada, nunca se copia el registro privado completo.
 
-Al publicar, hay que revisar el árbol completo: una regla permisiva existente en
-un ancestro puede anular este aislamiento. Estas reglas no se han cargado en un
-emulador ni en Firebase Console, así que la explicación no equivale a una
-validación ejecutada por el motor de reglas.
+Si una proyeccion ya esta publicada, la interfaz primero la despublica mediante una transaccion comparada y luego guarda la fuente privada. Las reglas del servidor bloquean escrituras privadas mientras la proyeccion esta publicada. La publicacion valida en el servidor que las asignaciones coincidan con la fuente privada actual. Esto evita que una edicion deje expuesta una vista vieja mientras se modifica la fuente.
 
-## Condiciones para crear el primer administrador
+La fuente y la proyeccion son dos transacciones RTDB separadas; no son atomicas entre si. Si falla la segunda transaccion, la interfaz informa que la fuente privada se guardo pero que la proyeccion esta pendiente. La vista permanece oculta hasta una sincronizacion y publicacion aprobadas. No se marca una sincronizacion completa en silencio. Las transacciones comparadas evitan reemplazar cambios concurrentes.
 
-La regla de `access` requiere que ya exista un administrador, por lo que no puede
-usarse para crear el primero desde una sesión cliente normal. Antes de conceder
-el rol inicial deben cumplirse estas condiciones:
+La escritura privada conserva campos desconocidos del registro previo. `localStorage` no se migra ni se borra; la vista publica limpia en memoria los campos privados que pudiera haber cargado el navegador.
 
-1. El propietario confirma el proyecto Firebase y la instancia de Realtime
-   Database correctos.
-2. Google Authentication está habilitado y el propietario inicia sesión con la
-   cuenta que desea autorizar, para obtener su UID exacto. La autenticación del
-   cliente por sí sola no concede permisos.
-3. El propietario accede a la base de datos mediante un canal de confianza con
-   privilegios administrativos y crea `access/admins/<UID>` con el valor booleano
-   `true`. La consola Firebase autenticada es una opción; también puede usarse el
-   SDK Admin desde un entorno seguro.
-4. Si se usa el SDK Admin, las credenciales de servicio deben permanecer fuera del
-   navegador, del repositorio y de los registros. No se debe crear ni compartir
-   una clave de servidor para esta prueba.
-5. Verificar la entrada inicial y luego probar que un usuario no autorizado no
-   puede leer/escribir `access` ni `diagnostics/connectionTest`.
+## Acceso y reglas propuestas
 
-Este repositorio no ha creado un administrador remoto. Un error al escoger
-proyecto o UID puede conceder privilegios a la cuenta equivocada.
+La raiz niega lectura y escritura. Solo el hijo exacto de `publicData/schedules/<fecha>/<reunion>` tiene permiso de lectura, y solo si esta publicado o quien consulta es editor/admin autorizado. El registro publico exige `published` booleano, `assignments` con claves conocidas, sin campos adicionales y con nombres limitados. Solo admins/editores pueden escribir un borrador no publicado; solo un admin puede poner `published: true`.
 
-## Pruebas locales ejecutables y límites
+El nodo privado `schedules/<fecha>/<reunion>` requiere UID con `true` en `access/admins/<uid>` o `access/editors/<uid>`. Su escritura se deniega mientras la proyeccion correspondiente este publicada. `access` solo lo lee/modifica un admin, con lectura adicional de cada usuario autenticado a su propio nodo de rol. El diagnostico solo se permite en `diagnostics/connectionTest` para admins/editores y valida `ok`, `timestamp` ISO y `source`; no hay permisos en la rama padre.
 
-Ejecutar `node scripts/validate-firebase-rules-proposal.mjs` comprueba que ambos
-JSON parsean, que el deploy sigue apuntando a la regla local deny-all, y que la
-estructura y las expresiones requeridas aparecen en los nodos esperados. Esto es
-una comprobación estática; no interpreta las reglas. También se ejecutó la suite
-contra el emulador real de Realtime Database usando identidades y datos
-sintéticos.
+Los permisos `.read` y `.write` se heredan a descendientes y no se restringen desde hijos mas profundos. Por eso no hay concesiones en `/`, `/publicData`, `/schedules` ni `/diagnostics`; las concesiones se ubican en las rutas concretas. `.validate` no concede acceso.
 
-Resultados ejecutados con el emulador:
+El primer admin debe crearse manualmente por el propietario: habilitar Email/Password en Firebase Authentication, crear su cuenta, obtener su UID e insertar `access/admins/<uid>: true` desde la consola con acceso de propietario. No se crean cuentas ni roles remotos desde esta aplicacion.
 
-| Caso | Resultado real |
-| --- | --- |
-| Sin autenticar: leer/escribir diagnóstico | Pasó: ambas operaciones denegadas |
-| Autenticado sin rol: leer/escribir diagnóstico | Pasó: ambas operaciones denegadas |
-| Editor: crear, leer y borrar registro válido | Pasó |
-| Admin: leer/escribir `access` | Pasó |
-| Editor: leer/escribir `access` | Pasó: ambas operaciones denegadas |
-| Anónimo: leer/escribir `publicData` | Pasó: lectura permitida, escritura denegada |
-| Editor: escribir `publicData` | Pasó |
-| Diagnóstico inválido: campo faltante/adicional, `ok` inválido, `source` incorrecto | Pasó: escrituras denegadas |
-| Diagnóstico inválido: timestamp vacío, mayor de 24 caracteres o formato incorrecto | Pasó: escrituras denegadas |
+## Pruebas locales
 
-La suite reportó 16 pruebas (incluye los subcasos de registros inválidos), 16
-pasaron y 0 fallaron. Para ejecutarla desde la raíz:
+`node scripts/validate-firebase-rules-proposal.mjs` verifica JSON, rutas y condiciones esperadas, pero no ejecuta el motor de reglas. La suite de `security-tests` usa identidades y datos sinteticos contra el emulador RTDB local; el proyecto `demo-...` evita servicios reales. El comando es:
 
 ```powershell
 cd security-tests
-npm ci
 $env:XDG_CONFIG_HOME = Join-Path $env:TEMP 'cmb-rtdb-firebase-config'
 $env:FIREBASE_EMULATORS_PATH = Join-Path $env:TEMP 'cmb-rtdb-firebase-emulators'
 npm run test:emulator
 ```
 
-El arnés aislado probado usa Firebase CLI 14.27.0, Firebase SDK 12.19.0 y
-`@firebase/rules-unit-testing` 5.0.2 por la compatibilidad de versiones; no
-cambia las dependencias de la aplicación, que sigue con Firebase 13.
-`firebase.emulator.json` es solo configuración local del
-emulador y carga `database.rules.proposed.json`. El proyecto `demo-...` evita
-conexiones a servicios reales. La primera ejecución puede descargar el JAR del
-emulador; Firebase CLI puede mostrar un aviso de MOTD sin afectar la prueba.
-La instalación reportó 19 avisos de vulnerabilidad en el árbol aislado de
-herramientas; no ejecuté actualizaciones automáticas. Revisar con
-`npm audit --prefix security-tests` antes de reutilizar estas herramientas.
+En la ultima ejecucion local de esta suite, los 24 casos pasaron (0 fallos), incluida la lectura anonima de una proyeccion publicada, el rechazo de borradores/campos privados, la restriccion de publicacion a administradores y el bloqueo de la fuente privada mientras una vista esta publicada. Esto no demuestra conexion ni reglas remotas.
 
-Durante las pruebas se corrigió la regla `$other`: para que solo capture claves
-desconocidas, `ok`, `timestamp` y `source` deben declararse también como hijos
-estáticos. Con esa corrección se aceptó el registro válido y se rechazaron los
-inválidos.
+La prueba remota queda pendiente de la configuracion del propietario y la aprobacion de reglas. No se debe publicar `database.rules.proposed.json` automaticamente ni abrir reglas de produccion para probar.
 
-La prueba remota requiere además confirmar en Firebase Console que Realtime
-Database existe, Google Authentication está habilitado y el dominio local está
-autorizado. No se confirmó ninguna lectura ni escritura remota. No hay que abrir
-lectura/escritura global, habilitar facturación ni migrar `localStorage` para
-revisar esta propuesta.
-
-`database.rules.json` sigue con `.read: false` y `.write: false`; Firebase CLI no
-publicó reglas ni se conectó a una instancia remota.
-
-## Retirar la prueba
-
-Al terminar la verificación remota, borrar únicamente
-`diagnostics/connectionTest`, comprobar que está vacío y retirar la autorización
-temporal si corresponde. Para retirar el código local, borrar
-`firebase-diagnostics.html` y `src/firebase-diagnostics.js`. Mantener o eliminar
-el borrador de reglas según la decisión del propietario; nunca desplegarlo por
-accidente. Los datos de `localStorage` no se modifican.
+Para retirar la pagina diagnostica local se eliminan `firebase-diagnostics.html` y `src/firebase-diagnostics.js`; la propuesta y sus pruebas se pueden conservar. No se deben borrar datos de `localStorage`.

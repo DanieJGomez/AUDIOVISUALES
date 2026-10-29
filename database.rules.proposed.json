@@ -3,12 +3,50 @@
     ".read": false,
     ".write": false,
     "publicData": {
-      ".read": true,
-      ".write": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)"
+      "schedules": {
+        "$date": {
+          "$meeting": {
+            ".read": "(auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)) || data.child('published').val() === true",
+            ".write": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || (root.child('access/editors').child(auth.uid).val() === true && newData.child('published').val() === false))",
+            ".validate": "newData.hasChildren(['published']) && (newData.child('published').val() !== true || (newData.child('assignments').child('mainCamera').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('mainCamera').val() && newData.child('assignments').child('camera1').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('camera1').val() && newData.child('assignments').child('camera2').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('camera2').val() && newData.child('assignments').child('photo').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('photo').val() && newData.child('assignments').child('lyrics').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('lyrics').val() && newData.child('assignments').child('stageFirst').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('stageFirst').val() && newData.child('assignments').child('stageSermon').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('stageSermon').val()))",
+            "published": { ".validate": "newData.isBoolean()" },
+            "assignments": {
+              ".validate": "!newData.isString() && !newData.isNumber() && !newData.isBoolean()",
+              "mainCamera": { ".validate": "newData.isString() && newData.val().length <= 80" },
+              "camera1": { ".validate": "newData.isString() && newData.val().length <= 80" },
+              "camera2": { ".validate": "newData.isString() && newData.val().length <= 80" },
+              "photo": { ".validate": "newData.isString() && newData.val().length <= 80" },
+              "lyrics": { ".validate": "newData.isString() && newData.val().length <= 80" },
+              "stageFirst": { ".validate": "newData.isString() && newData.val().length <= 80" },
+              "stageSermon": { ".validate": "newData.isString() && newData.val().length <= 80" },
+              "$other": { ".validate": false }
+            },
+            "$other": { ".validate": false }
+          }
+        }
+      }
     },
     "access": {
       ".read": "auth != null && root.child('access/admins').child(auth.uid).val() === true",
-      ".write": "auth != null && root.child('access/admins').child(auth.uid).val() === true"
+      ".write": "auth != null && root.child('access/admins').child(auth.uid).val() === true",
+      "admins": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid"
+        }
+      },
+      "editors": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+    "schedules": {
+      "$date": {
+        "$meeting": {
+          ".read": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)",
+          ".write": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true) && root.child('publicData/schedules').child($date).child($meeting).child('published').val() !== true"
+        }
+      }
     },
     "diagnostics": {
       "connectionTest": {

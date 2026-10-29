@@ -8,9 +8,9 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <title>CMB · Audiovisuales</title>
 <link rel="stylesheet" href="src/styles.css">
-<link rel="icon" href="public/images/LgoChurch.ico">
+<link rel="icon" href="/images/LgoChurch.ico">
 </head>
-<body>
+<body class="public-view">
 <header class="top">
     <div class="topinner">
         <div class="brand">Centro Misionero Bethesda · Sede Centro</div>
@@ -19,10 +19,35 @@
     </div>
 </header>
 <main class="wrap">
+<section class="access-panel" aria-label="Conexión y acceso de editores">
+    <div class="access-status">
+        <span id="connectionStatus" role="status">Comprobando conexión…</span>
+        <span id="cloudStatus">Consultando programación pública…</span>
+    </div>
+    <div class="local-test-controls" aria-label="Prueba local">
+        <button class="btn secondary" id="localTestModeBtn" type="button">Preparar prueba local</button>
+        <button class="btn secondary hidden" id="exitLocalTestModeBtn" type="button">Salir de prueba local</button>
+        <span id="localTestStatus" class="status" aria-live="polite">Prueba local: selección con la lista predefinida; no se sincroniza con Firebase.</span>
+    </div>
+    <details id="editorAccess">
+        <summary>Acceso de editores</summary>
+        <form id="loginForm" class="login-form">
+            <label for="editorEmail">Correo</label>
+            <input id="editorEmail" type="email" autocomplete="username" required>
+            <label for="editorPassword">Contraseña</label>
+            <input id="editorPassword" type="password" autocomplete="current-password" required>
+            <div class="actions">
+                <button class="btn primary" type="submit" id="loginBtn">Iniciar sesión</button>
+                <button class="btn secondary hidden" type="button" id="logoutBtn">Cerrar sesión</button>
+            </div>
+            <p id="authStatus" class="status" aria-live="polite">La consulta pública no requiere iniciar sesión.</p>
+        </form>
+    </details>
+</section>
 <div class="tabs" role="tablist">
     <button class="tab active" data-tab="schedule">Programación</button>
     <button class="tab" data-tab="mapview">Mapa audiovisual</button>
-    <button class="tab" data-tab="tasksview">Tareas y avisos</button>
+    <button class="tab" id="tasksTab" data-tab="tasksview">Tareas y avisos</button>
 </div>
 <section id="schedule" class="tabpage">
 <div class="layout">
@@ -32,7 +57,12 @@
         <div class="twocol">
             <div class="field">
                 <label for="serviceDate">Fecha del culto</label>
-                <input id="serviceDate" type="date" value="2026-10-25">
+                <input id="serviceDate" type="date" value="">
+                <div class="calendar-nav" aria-label="Navegar por fechas">
+                    <button class="btn secondary small" id="previousDayBtn" type="button" aria-label="Dia anterior">&lsaquo; Anterior</button>
+                    <button class="btn secondary small" id="todayBtn" type="button">Hoy</button>
+                    <button class="btn secondary small" id="nextDayBtn" type="button" aria-label="Dia siguiente">Siguiente &rsaquo;</button>
+                </div>
             </div>
      <div class="field">
             <label for="meeting">Reunión</label>
@@ -44,7 +74,7 @@
             </select>
         </div>
         </div>
-        <div class="field">
+        <div class="field private-schedule-field">
             <label>Hora de llegada</label>
             <div class="time-selectors">
                 <select id="arrivalHour" aria-label="Hora"></select>
@@ -55,7 +85,7 @@
                 </select>
             </div>
         </div>
-        <div class="field">
+        <div class="field private-schedule-field">
             <label for="dress">Vestimenta / color del día (opcional)</label>
             <div class="colorrow">
                 <input type="color" id="dressColor" value="#244a38" aria-label="Color de vestimenta">
@@ -74,17 +104,19 @@
                 </select>
             </div>
         </div>
-        <div class="field">
+        <div class="field private-schedule-field">
             <label for="generalNotes">Avisos generales</label>
             <textarea id="generalNotes">La programación puede estar sujeta a cambios. Gracias por su disposición.</textarea>
         </div>
         <div class="actions">
-            <button class="btn primary" id="saveBtn">Guardar en este dispositivo</button>
-            <button class="btn secondary" id="resetBtn">Restablecer ejemplo</button>
+            <button class="btn primary" id="saveBtn" disabled>Inicia sesión para editar</button>
+            <button class="btn secondary" id="resetBtn">Vaciar reunión</button>
+            <button class="btn secondary hidden" id="publishScheduleBtn" type="button">Publicar asignaciones</button>
         </div>
      <div id="saveStatus" class="status">
-         Ejemplo de programación cargado.
+         Esperando la programación pública o una prueba local.
      </div>
+     <button class="btn secondary hidden" id="reloadRemoteBtn" type="button">Recargar versión compartida</button>
     </div>
 </div>
     <div class="card">
@@ -94,9 +126,8 @@
         </div>
         <div class="cardbody">
             <div id="assignments" class="assignments"></div>
-            <div class="actions">
-                <button class="btn secondary" id="addPerson">+ Añadir nombre</button>
-            </div>
+            <p id="assignmentConflictStatus" class="status" role="status" aria-live="polite">Comprobando asignaciones de esta reunión…</p>
+            <p id="localRosterHint" class="sub hidden">Elige una persona de la lista predefinida en cada puesto. No se pueden añadir nombres desde esta prueba.</p>
         </div>
     </div>
 </div>
@@ -223,11 +254,6 @@
     <rect x="-26" y="-26" width="52" height="52" transform="translate(1330 520) rotate(45)"/>
         <path d="M1316 506L1344 534M1344 506L1316 534"/>
 </g>
-    <rect x="375" y="330" width="180" height="13" fill="#111"/>
-    <rect x="1655" y="343" width="135" height="13" fill="#111"/>
-        <text class="t tw" x="465" y="380" font-size="26" text-anchor="middle" >Pantalla Q1</text>
-        <text class="t tw" x="1722" y="393" font-size="26" text-anchor="middle" >Pantalla Q2</text>
-
      <!---sillas centrales frente altar-->
     <rect x="700" y="705" width="195" height="825" rx="14" fill="url(#chairs)" stroke="#6f8077" stroke-width="3.5" stroke-dasharray="14 10"/>
     <rect x="985" y="705" width="390" height="827" rx="14" fill="url(#chairs)" stroke="#6f8077" stroke-width="3.5" stroke-dasharray="14 10"/>
@@ -277,38 +303,12 @@
             <h2>Tareas especiales</h2>
         </div>
         <div class="cardbody">
-            <div class="tasklist" id="tasks">
-            <label class="task"><input type="checkbox">
-                <span>
-                    <strong>Entrega del sistema de monitoreo</strong><br>
-                    <small class="sub">Responsable: David Bonilla</small>
-                </span>
-            </label>
-                <label class="task">
-                    <input type="checkbox">
-                 <span>
-                        <strong>Recoger el sistema</strong><br>
-                    <small class="sub">Responsable: Evelyn</small>
-                    </span>
-                </label>
-                <label class="task">
-                 <input type="checkbox">
-                    <span>
-                        <strong>Preparar monitoreo de alabanza</strong><br>
-                     <small class="sub">Responsable: Maicol</small>
-                    </span>
-             </label>
-             <label class="task">
-                <input type="checkbox">
-                <span>
-                    <strong>Enviar ideas de contenido semanal</strong>
-                        <br><small class="sub">Responsable: Lau</small>
-                    </span>
-                </label>
-            </div>
+            <div class="tasklist" id="tasks"></div>
             <div class="field" style="margin-top:15px">
                 <label for="extraTask">Añadir aviso o tarea</label>
                 <input id="extraTask" placeholder="Escribe una tarea...">
+            <label for="extraTaskAssignee">Responsable (opcional)</label>
+                <select id="extraTaskAssignee"><option value="">Sin responsable</option></select>
             </div>
                 <button class="btn secondary" id="addTask">Añadir tarea</button>
         </div>

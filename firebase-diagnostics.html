@@ -74,7 +74,9 @@
         <h2>1. Autenticación</h2>
         <p id="authStatus">Comprobando estado de sesión...</p>
         <div class="actions">
-            <button id="signIn">Iniciar sesión con Google</button>
+            <input id="editorEmail" type="email" autocomplete="username" aria-label="Correo del editor">
+            <input id="editorPassword" type="password" autocomplete="current-password" aria-label="Contraseña del editor">
+            <button id="signIn">Iniciar sesión</button>
             <button id="signOut" class="secondary" disabled>Cerrar sesión</button>
         </div>
         <p class="muted">
