@@ -278,6 +278,20 @@ margin:3px 0;
 color:var(--muted);
 font-size:13px;
 }
+.camera-orientation{
+display:grid;
+grid-template-columns:auto minmax(120px,1fr) 48px;
+align-items:center;
+gap:8px;
+margin-top:12px;
+padding-top:10px;
+border-top:1px solid var(--line);
+font-size:13px;
+}
+.camera-orientation input{width:100%;accent-color:var(--green)}
+.camera-orientation output{text-align:right;font-variant-numeric:tabular-nums}
+.camera-hint{grid-column:1/-1;margin:0!important;font-size:12px!important}
+.map-note{margin:0 0 8px}
 .tasklist{
 display:grid;
 gap:9px;

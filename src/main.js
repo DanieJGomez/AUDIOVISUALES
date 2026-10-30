@@ -4,6 +4,7 @@ import {
     readData,
     subscribeToConnection,
 } from './database.js';
+import { cameraConePath, normalizeAngle } from './camera-orientation.js';
 import {
     signInWithEmailAndPasswordUser,
     signOutUser,
@@ -754,6 +755,8 @@ function renderAssignments() {
 const NS = 'http://www.w3.org/2000/svg';
 let selectedPost = 'mainCamera';
 let mapBuilt = false;
+const cameraOrientations = { mainCamera: -90, camera1: -150, camera2: -30 };
+const cameraIds = new Set(Object.keys(cameraOrientations));
 
 const posts = [
     {
@@ -848,6 +851,8 @@ function postNames(p) {
 }
 
 function buildMap() {
+    const coneLayer = el('g', { id: 'cameraCones', 'aria-hidden': 'true' });
+    $('churchMap').insertBefore(coneLayer, $('posts'));
     posts.forEach(p => {
         const g = el('g', {
             class: 'post',
@@ -865,6 +870,13 @@ function buildMap() {
             'fill-opacity': .15,
             stroke: p.color
         }));
+
+        if (cameraIds.has(p.id)) {
+            const cone = el('g', { class: 'camera-cone', transform: `translate(${p.x} ${p.y}) rotate(${cameraOrientations[p.id]})` });
+            cone.appendChild(el('path', { d: cameraConePath(), fill: p.color, 'fill-opacity': '.16', stroke: p.color, 'stroke-opacity': '.65', 'stroke-width': 5 }));
+            coneLayer.appendChild(cone);
+            p.cone = cone;
+        }
         g.appendChild(el('circle', {
             cx: p.x,
             cy: p.y,
@@ -992,7 +1004,10 @@ function renderMap() {
         mapBuilt = true;
     }
 
-    posts.forEach(p => p.el.classList.toggle('selected', p.id === selectedPost));
+    posts.forEach(p => {
+        p.el.classList.toggle('selected', p.id === selectedPost);
+        if (p.cone) p.cone.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${cameraOrientations[p.id]})`);
+    });
 
     let h = '';
     posts.forEach(p => {
@@ -1019,6 +1034,33 @@ function showMarkerDetail() {
         q.textContent = (p.roles.length > 1 ? r.name : 'Responsable') + ': ' + (a[id] || 'Sin asignar');
         b.appendChild(q);
     });
+
+    if (cameraIds.has(p.id)) {
+        const controls = document.createElement('div');
+        controls.className = 'camera-orientation';
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        const value = document.createElement('output');
+        input.type = 'range';
+        input.min = '-180';
+        input.max = '180';
+        input.step = '5';
+        input.value = cameraOrientations[p.id] > 180 ? cameraOrientations[p.id] - 360 : cameraOrientations[p.id];
+        input.setAttribute('aria-label', `Orientación de ${p.t.join(' ')}`);
+        label.textContent = 'Orientación aproximada';
+        value.textContent = `${input.value}°`;
+        input.addEventListener('input', () => {
+            cameraOrientations[p.id] = normalizeAngle(input.value);
+            value.textContent = `${input.value}°`;
+            if (p.cone) p.cone.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${input.value})`);
+        });
+        controls.append(label, input, value);
+        const hint = document.createElement('p');
+        hint.className = 'camera-hint';
+        hint.textContent = 'Cono esquemático; posición, alcance y ángulo deben calibrarse con el plano real.';
+        controls.appendChild(hint);
+        b.appendChild(controls);
+    }
 
     const q = document.createElement('p');
     q.textContent = 'Reunión: ' + getMeetingLabel(meetingKey());
