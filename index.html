@@ -24,11 +24,6 @@
         <span id="connectionStatus" role="status">Comprobando conexión…</span>
         <span id="cloudStatus">Consultando programación pública…</span>
     </div>
-    <div class="local-test-controls" aria-label="Prueba local">
-        <button class="btn secondary" id="localTestModeBtn" type="button">Preparar prueba local</button>
-        <button class="btn secondary hidden" id="exitLocalTestModeBtn" type="button">Salir de prueba local</button>
-        <span id="localTestStatus" class="status" aria-live="polite">Prueba local: selección con la lista predefinida; no se sincroniza con Firebase.</span>
-    </div>
     <details id="editorAccess">
         <summary>Acceso de editores</summary>
         <form id="loginForm" class="login-form">
@@ -115,7 +110,7 @@
             <button class="btn secondary hidden" id="publishScheduleBtn" type="button">Publicar asignaciones</button>
         </div>
      <div id="saveStatus" class="status">
-         Esperando la programación pública o una prueba local.
+         Esperando la programación pública.
      </div>
      <button class="btn secondary hidden" id="reloadRemoteBtn" type="button">Recargar versión compartida</button>
     </div>
@@ -128,7 +123,6 @@
         <div class="cardbody">
             <div id="assignments" class="assignments"></div>
             <p id="assignmentConflictStatus" class="status" role="status" aria-live="polite">Comprobando asignaciones de esta reunión…</p>
-            <p id="localRosterHint" class="sub hidden">Elige una persona de la lista predefinida en cada puesto. No se pueden añadir nombres desde esta prueba.</p>
         </div>
     </div>
 </div>
@@ -341,5 +335,4 @@
 </body>
 <script type="module" src="./src/main.js"></script>
 </html>
-
 

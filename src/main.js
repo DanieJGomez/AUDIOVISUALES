@@ -68,9 +68,8 @@ const roles = [
 const initial = { first: {}, second: {} };
 const PREDEFINED_PEOPLE = [
     'Juan Pablo', 'Liseth Chiquiza','Lizeth Londoño', 'Dilan', 'Marco',
-     'Daniel Gomez','Evelin','Daniel Pineda','David Mateus',
-     'Johana','Samuel Herrera',
-    'Stiven', 'Maicol', 'Evelin', 'David Bonilla', 'Laura'
+     'Daniel Gomez','Evelin','Daniel Pineda','David Mateus','Paula',
+     'Johana','Samuel Herrera', 'Stiven', 'Maicol', 'Sebastian', 'David Bonilla', 'Laura'
 ];
 
 function cloneAssignments(source) {
@@ -227,12 +226,6 @@ function updateEditorControls() {
     const conflicts = currentAssignmentConflicts();
     updateAssignmentConflictStatus(conflicts);
     document.body.classList.toggle('public-view', !isEditor && !localTestMode);
-    $('localTestModeBtn').classList.toggle('hidden', isEditor || localTestMode);
-    $('exitLocalTestModeBtn').classList.toggle('hidden', !localTestMode);
-    $('localRosterHint').classList.toggle('hidden', !localTestMode);
-    $('localTestStatus').textContent = localTestMode
-        ? 'Modo de prueba local activo. Los cambios se guardan solo en este navegador; Firebase no se modifica.'
-        : 'La prueba local se guarda solo en este navegador; no se sincroniza con Firebase.';
     [
         'arrivalHour', 'arrivalMinute', 'arrivalPeriod', 'dress', 'dressColor',
         'generalNotes', 'saveBtn', 'resetBtn', 'extraTask', 'extraTaskAssignee', 'addTask'
@@ -1099,8 +1092,6 @@ $('meeting').addEventListener('change', () => {
     changeScheduleRoute();
 });
 $('serviceDate').addEventListener('change', changeScheduleRoute);
-$('localTestModeBtn').addEventListener('click', enterLocalTestMode);
-$('exitLocalTestModeBtn').addEventListener('click', exitLocalTestMode);
 
 function setServiceDate(date) {
     $('serviceDate').value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
