@@ -1,12 +1,12 @@
 import { MEETINGS, getMeetingLabel } from './meetings.js';
-import { findAssignmentConflicts } from './assignment-conflicts.js';
+import { findScheduleAssignmentConflicts } from './assignment-conflicts.js';
 import {
     readData,
     subscribeToConnection,
 } from './database.js';
 import { cameraConePath, normalizeAngle } from './camera-orientation.js';
 import {
-    signInWithEmailAndPasswordUser,
+    signInWithGoogleUser,
     signOutUser,
     subscribeToAuthState,
 } from './auth.js';
@@ -623,8 +623,6 @@ subscribeToAuthState((user) => {
     const sequence = ++authCheckSequence;
     $('loginBtn').classList.toggle('hidden', Boolean(user));
     $('logoutBtn').classList.toggle('hidden', !user);
-    $('editorEmail').disabled = Boolean(user);
-    $('editorPassword').disabled = Boolean(user);
 
     if (!user) {
         isAdmin = false;
@@ -646,14 +644,15 @@ subscribeToAuthState((user) => {
 $('loginForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     $('loginBtn').disabled = true;
-    $('authStatus').textContent = 'Iniciando sesión…';
+    $('authStatus').textContent = 'Iniciando sesión con Google…';
+
     try {
-        await signInWithEmailAndPasswordUser($('editorEmail').value.trim(), $('editorPassword').value);
-        $('editorPassword').value = '';
+        await signInWithGoogleUser();
     } catch (error) {
-        $('authStatus').textContent = error?.code === 'auth/invalid-credential'
-            ? 'Correo o contraseña incorrectos.'
-            : `No se pudo iniciar sesión: ${error?.code || 'error de autenticación'}`;
+        $('authStatus').textContent =
+            error?.code === 'auth/popup-closed-by-user'
+                ? 'Se cerró la ventana de inicio de sesión.'
+                : `No se pudo iniciar sesión: ${error?.code || 'error de autenticación'}`;
     } finally {
         $('loginBtn').disabled = false;
     }

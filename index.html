@@ -32,15 +32,16 @@
     <details id="editorAccess">
         <summary>Acceso de editores</summary>
         <form id="loginForm" class="login-form">
-            <label for="editorEmail">Correo</label>
-            <input id="editorEmail" type="email" autocomplete="username" required>
-            <label for="editorPassword">Contraseña</label>
-            <input id="editorPassword" type="password" autocomplete="current-password" required>
             <div class="actions">
-                <button class="btn primary" type="submit" id="loginBtn">Iniciar sesión</button>
-                <button class="btn secondary hidden" type="button" id="logoutBtn">Cerrar sesión</button>
+                <button class="btn primary" type="submit" id="loginBtn">
+                    Iniciar sesión con Google
+                </button>
+                <button class="btn secondary hidden" type="button" id="logoutBtn">
+                    Cerrar sesión
+                </button>
             </div>
-            <p id="authStatus" class="status" aria-live="polite">La consulta pública no requiere iniciar sesión.</p>
+            <p id="authStatus" class="status" aria-live="polite">
+            La consulta pública no requiere iniciar sesión.</p>
         </form>
     </details>
 </section>
@@ -102,7 +103,7 @@
                     <option value="Cafe">Cafe</option>
                     <option value="Verde Militar">Verde Militar</option>
                 </select>
-            </div>
+            </div>  
         </div>
         <div class="field private-schedule-field">
             <label for="generalNotes">Avisos generales</label>
@@ -144,7 +145,7 @@
             <button class="btn secondary small" id="zoomIn" aria-label="Acercar">+</button>
         </div>
     </div>
-    <p class="sub map-note">Pantallas y mezcla de imagen: ubicación por confirmar con el plano y en sitio.</p>
+    <p class="sub map-note">Ubicación aproximada recuperada del croquis; la ubicación definitiva debe calibrarse con el plano real y en sitio.</p>
     <div class="mapscroll">
         <svg id="churchMap" viewBox="60 40 2110 1570" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Croquis de la iglesia con los puestos audiovisuales">
         <defs>
@@ -255,6 +256,10 @@
     <rect x="-26" y="-26" width="52" height="52" transform="translate(1330 520) rotate(45)"/>
         <path d="M1316 506L1344 534M1344 506L1316 534"/>
 </g>
+    <rect x="375" y="330" width="180" height="13" fill="#111"/>
+    <rect x="1655" y="343" width="135" height="13" fill="#111"/>
+        <text class="t tw" x="465" y="380" font-size="26" text-anchor="middle" >Pantalla Q1</text>
+        <text class="t tw" x="1722" y="393" font-size="26" text-anchor="middle" >Pantalla Q2</text>
      <!---sillas centrales frente altar-->
     <rect x="700" y="705" width="195" height="825" rx="14" fill="url(#chairs)" stroke="#6f8077" stroke-width="3.5" stroke-dasharray="14 10"/>
     <rect x="985" y="705" width="390" height="827" rx="14" fill="url(#chairs)" stroke="#6f8077" stroke-width="3.5" stroke-dasharray="14 10"/>
