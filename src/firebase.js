@@ -5,7 +5,7 @@ import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCZKbU0bLOdTpre1vt62lw7QcBJm0oBe0",
+  apiKey: "AIzaSyCZKbU0bLOdTpre1vt62lw7QcBJm0oBe0M",
   authDomain: "cmb-audiovisuales.firebaseapp.com",
   databaseURL: "https://cmb-audiovisuales-default-rtdb.firebaseio.com",
   projectId: "cmb-audiovisuales",
