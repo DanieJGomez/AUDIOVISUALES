@@ -6,19 +6,19 @@
       "schedules": {
         "$date": {
           "$meeting": {
-            ".read": "(auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)) || data.child('published').val() === true",
-            ".write": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || (root.child('access/editors').child(auth.uid).val() === true && newData.child('published').val() === false))",
+            ".read": "($date.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && ($meeting === 'first' || $meeting === 'second' || $meeting === 'fasting' || $meeting === 'worship' || $meeting === 'vigil') && data.child('published').val() === true) || (auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true))",
+            ".write": "auth != null && $date.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && ($meeting === 'first' || $meeting === 'second' || $meeting === 'fasting' || $meeting === 'worship' || $meeting === 'vigil') && (root.child('access/admins').child(auth.uid).val() === true || (root.child('access/editors').child(auth.uid).val() === true && newData.child('published').val() === false))",
             ".validate": "newData.hasChildren(['published']) && (newData.child('published').val() !== true || (newData.child('assignments').child('mainCamera').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('mainCamera').val() && newData.child('assignments').child('camera1').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('camera1').val() && newData.child('assignments').child('camera2').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('camera2').val() && newData.child('assignments').child('photo').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('photo').val() && newData.child('assignments').child('lyrics').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('lyrics').val() && newData.child('assignments').child('stageFirst').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('stageFirst').val() && newData.child('assignments').child('stageSermon').val() === root.child('schedules').child($date).child($meeting).child('assignments').child('stageSermon').val()))",
             "published": { ".validate": "newData.isBoolean()" },
             "assignments": {
               ".validate": "!newData.isString() && !newData.isNumber() && !newData.isBoolean()",
-              "mainCamera": { ".validate": "newData.isString() && newData.val().length <= 80" },
-              "camera1": { ".validate": "newData.isString() && newData.val().length <= 80" },
-              "camera2": { ".validate": "newData.isString() && newData.val().length <= 80" },
-              "photo": { ".validate": "newData.isString() && newData.val().length <= 80" },
-              "lyrics": { ".validate": "newData.isString() && newData.val().length <= 80" },
-              "stageFirst": { ".validate": "newData.isString() && newData.val().length <= 80" },
-              "stageSermon": { ".validate": "newData.isString() && newData.val().length <= 80" },
+              "mainCamera": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+              "camera1": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+              "camera2": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+              "photo": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+              "lyrics": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+              "stageFirst": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+              "stageSermon": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
               "$other": { ".validate": false }
             },
             "$other": { ".validate": false }
@@ -28,23 +28,59 @@
     },
     "access": {
       ".read": "auth != null && root.child('access/admins').child(auth.uid).val() === true",
-      ".write": "auth != null && root.child('access/admins').child(auth.uid).val() === true",
       "admins": {
         "$uid": {
-          ".read": "auth != null && auth.uid === $uid"
+          ".read": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || auth.uid === $uid)",
+          ".write": "auth != null && root.child('access/admins').child(auth.uid).val() === true && auth.uid !== $uid",
+          ".validate": "newData.isBoolean()"
         }
       },
       "editors": {
         "$uid": {
-          ".read": "auth != null && auth.uid === $uid"
+          ".read": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || auth.uid === $uid)",
+          ".write": "auth != null && root.child('access/admins').child(auth.uid).val() === true && auth.uid !== $uid",
+          ".validate": "newData.isBoolean()"
         }
       }
     },
     "schedules": {
       "$date": {
         "$meeting": {
-          ".read": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)",
-          ".write": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true) && root.child('publicData/schedules').child($date).child($meeting).child('published').val() !== true"
+          ".read": "auth != null && $date.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && ($meeting === 'first' || $meeting === 'second' || $meeting === 'fasting' || $meeting === 'worship' || $meeting === 'vigil') && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)",
+          ".write": "newData.exists() && auth != null && $date.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && ($meeting === 'first' || $meeting === 'second' || $meeting === 'fasting' || $meeting === 'worship' || $meeting === 'vigil') && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true) && root.child('publicData/schedules').child($date).child($meeting).child('published').val() !== true",
+          ".validate": "newData.hasChildren(['arrival', 'dress', 'dressColor', 'notes', 'updatedAt', 'updatedBy'])",
+          "assignments": {
+            ".validate": "!newData.isString() && !newData.isNumber() && !newData.isBoolean()",
+            "mainCamera": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+            "camera1": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+            "camera2": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+            "photo": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+            "lyrics": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+            "stageFirst": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+            "stageSermon": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+            "$other": { ".validate": false }
+          },
+          "people": {
+            ".validate": "!newData.isString() && !newData.isNumber() && !newData.isBoolean()",
+            "$index": { ".validate": "$index.matches(/^(0|[1-9]|[1-9][0-9])$/) && newData.isString() && newData.val().length > 0 && newData.val().length <= 80" }
+          },
+          "tasks": {
+            ".validate": "!newData.isString() && !newData.isNumber() && !newData.isBoolean()",
+            "$index": {
+              ".validate": "$index.matches(/^(0|[1-9]|[1-9][0-9])$/) && newData.hasChildren(['text', 'completed', 'assignee'])",
+              "text": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500" },
+              "completed": { ".validate": "newData.isBoolean()" },
+              "assignee": { ".validate": "newData.isString() && newData.val().length <= 80" },
+              "$other": { ".validate": false }
+            }
+          },
+          "arrival": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20" },
+          "dress": { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "dressColor": { ".validate": "newData.isString() && newData.val().length <= 40" },
+          "notes": { ".validate": "newData.isString() && newData.val().length <= 2000" },
+          "updatedAt": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$/)" },
+          "updatedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+          "$other": { ".validate": false }
         }
       }
     },
@@ -53,18 +89,10 @@
         ".read": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)",
         ".write": "auth != null && (root.child('access/admins').child(auth.uid).val() === true || root.child('access/editors').child(auth.uid).val() === true)",
         ".validate": "newData.hasChildren(['ok', 'timestamp', 'source']) && newData.child('ok').isBoolean() && newData.child('ok').val() === true && newData.child('timestamp').isString() && newData.child('timestamp').val().length > 0 && newData.child('timestamp').val().length <= 24 && newData.child('timestamp').val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$/) && newData.child('source').isString() && newData.child('source').val() === 'firebase-diagnostics'",
-        "ok": {
-          ".validate": true
-        },
-        "timestamp": {
-          ".validate": true
-        },
-        "source": {
-          ".validate": true
-        },
-        "$other": {
-          ".validate": false
-        }
+        "ok": { ".validate": true },
+        "timestamp": { ".validate": true },
+        "source": { ".validate": true },
+        "$other": { ".validate": false }
       }
     }
   }

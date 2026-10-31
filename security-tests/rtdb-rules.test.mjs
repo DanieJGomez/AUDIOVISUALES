@@ -6,7 +6,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { get, ref, remove, set } from 'firebase/database';
+import { get, ref, remove, runTransaction, set } from 'firebase/database';
 
 const PROJECT_ID = 'demo-cmb-audiovisual-security';
 const TEST_PATH = 'diagnostics/connectionTest';
@@ -15,6 +15,39 @@ const VALID_RECORD = {
   timestamp: '2026-10-28T18:04:05.123Z',
   source: 'firebase-diagnostics',
 };
+
+function validSchedule(uid, overrides = {}) {
+  return {
+    assignments: { camera1: 'Server A' },
+    people: ['Server A'],
+    tasks: [{ text: 'Check camera', completed: false, assignee: 'Server A' }],
+    arrival: '07:00 AM',
+    dress: 'Formal',
+    dressColor: '#000000',
+    notes: 'private note',
+    updatedAt: '2026-10-28T18:04:05.123Z',
+    updatedBy: uid,
+    ...overrides,
+  };
+}
+
+function stableValue(value) {
+  if (Array.isArray(value)) return value.map(stableValue);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.keys(value).sort().map((key) => [key, stableValue(value[key])])
+    );
+  }
+  return value;
+}
+
+function writeDataIfUnchanged(scheduleRef, value, expectedValue) {
+  const expected = JSON.stringify(stableValue(expectedValue));
+  return runTransaction(scheduleRef, (currentValue) => {
+    if (JSON.stringify(stableValue(currentValue)) !== expected) return undefined;
+    return value;
+  }, { applyLocally: false });
+}
 
 let testEnv;
 
@@ -52,8 +85,8 @@ beforeEach(async () => {
       },
       schedules: {
         '2026-10-25': {
-          first: { assignments: { camera1: 'Server A' }, notes: 'private note', updatedBy: 'editor-1' },
-          second: { assignments: { camera1: 'Server B' }, notes: 'private note', updatedBy: 'editor-1' },
+          first: validSchedule('editor-1'),
+          second: validSchedule('editor-1', { assignments: { camera1: 'Server B' } }),
         },
       },
     });
@@ -92,12 +125,33 @@ test('authorized administrator can read and modify access', async () => {
   await assertSucceeds(set(accessRef, true));
   const result = await assertSucceeds(get(accessRef));
   assert.equal(result.val(), true);
+  await assertFails(set(ref(db, 'access/admins/admin-1'), false));
 });
 
-test('authorized editor cannot read or modify access', async () => {
+test('authorized administrator can read and write a valid private schedule', async () => {
+  const db = testEnv.authenticatedContext('admin-1').database();
+  const scheduleRef = ref(db, 'schedules/2026-10-25/second');
+  const initial = await assertSucceeds(get(scheduleRef));
+  assert.equal(initial.val().notes, 'private note');
+
+  const updatedSchedule = validSchedule('admin-1', {
+    assignments: { camera1: 'Admin Updated' },
+  });
+  await assertSucceeds(set(scheduleRef, updatedSchedule));
+  const updated = await assertSucceeds(get(scheduleRef));
+  assert.deepEqual(updated.val(), updatedSchedule);
+});
+
+test('users cannot assign themselves editor or administrator permissions', async () => {
   const db = testEnv.authenticatedContext('editor-1').database();
+  await assertFails(set(ref(db, 'access/editors/editor-1'), true));
+  await assertFails(set(ref(db, 'access/admins/editor-1'), true));
+  const outsider = testEnv.authenticatedContext('outsider-1').database();
+  await assertFails(set(ref(outsider, 'access/editors/outsider-1'), true));
+  await assertFails(set(ref(outsider, 'access/admins/outsider-1'), true));
   await assertFails(get(ref(db, 'access')));
   await assertFails(set(ref(db, 'access/editors/editor-2'), true));
+  await assertFails(set(ref(db, 'access/unlisted/another-user'), true));
 });
 
 test('undeclared publicData branches stay inaccessible', async () => {
@@ -168,29 +222,94 @@ test('administrator can publish the projection with the approved schema', async 
   assert.deepEqual(published.val(), { published: true, assignments: { camera1: 'Server B' } });
 });
 
-test('raw schedules are not public and cannot be written by anonymous users', async () => {
+test('visitor can read a published projection but cannot read or write private schedules', async () => {
   const db = testEnv.unauthenticatedContext().database();
   const scheduleRef = ref(db, 'schedules/2026-10-25/first');
   await assertFails(get(scheduleRef));
-  await assertFails(set(scheduleRef, { title: 'attacker edit' }));
+  await assertFails(set(scheduleRef, validSchedule('visitor')));
+  const published = await assertSucceeds(get(ref(db, 'publicData/schedules/2026-10-25/first')));
+  assert.equal(published.val().published, true);
+  await assertFails(set(ref(db, 'publicData/schedules/2026-10-25/second'), {
+    published: true,
+    assignments: { camera1: 'Visitor edit' },
+  }));
 });
 
-test('authorized editors share schedule data; users without roles cannot write', async () => {
+test('authorized editor can read and modify private schedule; unlisted user cannot write', async () => {
   const editorOne = testEnv.authenticatedContext('editor-1').database();
   const editorTwo = testEnv.authenticatedContext('editor-2').database();
   const outsider = testEnv.authenticatedContext('outsider-1').database();
   const schedulePath = 'schedules/2026-10-25/second';
-  await assertSucceeds(set(ref(editorOne, schedulePath), { assignments: { camera1: 'Server A' } }));
+  const initial = await assertSucceeds(get(ref(editorOne, schedulePath)));
+  assert.equal(initial.val().notes, 'private note');
+  await assertSucceeds(set(ref(editorOne, schedulePath), validSchedule('editor-1', {
+    assignments: { camera1: 'Server C' },
+  })));
+  await assertFails(remove(ref(editorOne, schedulePath)));
   const shared = await assertSucceeds(get(ref(editorTwo, schedulePath)));
-  assert.deepEqual(shared.val(), { assignments: { camera1: 'Server A' } });
-  await assertFails(set(ref(outsider, schedulePath), { assignments: {} }));
+  assert.equal(shared.val().assignments.camera1, 'Server C');
+  await assertFails(set(ref(outsider, schedulePath), validSchedule('outsider-1')));
+});
+
+test('stale schedule transaction is rejected without replacing the newer version', async () => {
+  const editorOne = testEnv.authenticatedContext('editor-1').database();
+  const editorTwo = testEnv.authenticatedContext('editor-2').database();
+  const schedulePath = 'schedules/2026-10-25/second';
+  const editorOneSchedule = ref(editorOne, schedulePath);
+  const editorTwoSchedule = ref(editorTwo, schedulePath);
+  const baseline = (await assertSucceeds(get(editorOneSchedule))).val();
+
+  const newerSchedule = validSchedule('editor-2', {
+    assignments: { camera1: 'Newer version' },
+  });
+  await assertSucceeds(set(editorTwoSchedule, newerSchedule));
+
+  const staleWrite = await writeDataIfUnchanged(
+    editorOneSchedule,
+    validSchedule('editor-1', { assignments: { camera1: 'Stale version' } }),
+    baseline
+  );
+  assert.equal(staleWrite.committed, false);
+  const stored = await assertSucceeds(get(editorOneSchedule));
+  assert.deepEqual(stored.val(), newerSchedule);
+});
+
+test('authorized user cannot forge updatedBy or write extra private fields', async () => {
+  const editor = testEnv.authenticatedContext('editor-1').database();
+  const scheduleRef = ref(editor, 'schedules/2026-10-25/second');
+  await assertFails(set(scheduleRef, validSchedule('editor-2')));
+  await assertFails(set(scheduleRef, validSchedule('editor-1', { internalFlag: 'unexpected' })));
+  await assertFails(set(scheduleRef, validSchedule('editor-1', { notes: 42 })));
+  await assertFails(set(scheduleRef, validSchedule('editor-1', {
+    assignments: { camera1: 12 },
+  })));
+  await assertFails(set(scheduleRef, validSchedule('editor-1', {
+    tasks: [{ text: 'Check camera', completed: 'false', assignee: 'Server A' }],
+  })));
+  const missingNotes = validSchedule('editor-1');
+  delete missingNotes.notes;
+  await assertFails(set(scheduleRef, missingNotes));
+  await assertFails(set(scheduleRef, validSchedule('editor-1', {
+    people: Array.from({ length: 101 }, (_, index) => `Person ${index}`),
+  })));
+  await assertFails(set(scheduleRef, validSchedule('editor-1', {
+    tasks: Array.from({ length: 101 }, (_, index) => ({
+      text: `Task ${index}`,
+      completed: false,
+      assignee: '',
+    })),
+  })));
+  await assertFails(set(ref(editor, 'schedules/2026-10-25/second/assignments/unlistedRole'), 'Server A'));
+  await assertFails(set(ref(editor, 'schedules/not-a-date/second'), validSchedule('editor-1')));
 });
 
 test('a published projection locks its private source until it is unpublished', async () => {
   const editor = testEnv.authenticatedContext('editor-1').database();
   const privateSchedule = ref(editor, 'schedules/2026-10-25/first');
   await assertSucceeds(get(privateSchedule));
-  await assertFails(set(privateSchedule, { assignments: { camera1: 'Changed' } }));
+  await assertFails(set(privateSchedule, validSchedule('editor-1', {
+    assignments: { camera1: 'Changed' },
+  })));
 });
 
 test('authenticated editor can read only their own UID membership', async () => {

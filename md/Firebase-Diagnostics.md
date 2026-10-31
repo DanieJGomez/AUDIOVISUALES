@@ -2,7 +2,7 @@
 
 ## Estado
 
-`database.rules.json` sigue denegando toda lectura y escritura. `firebase.json` apunta a ese archivo. `database.rules.proposed.json` es solo una propuesta local; no se publico ni se probo contra Firebase remoto. El cliente de `src/firebase.js` no demuestra que RTDB exista o que Email/Password este habilitado.
+`database.rules.json` sigue denegando toda lectura y escritura. `firebase.json` apunta a ese archivo. `database.rules.proposed.json` es una propuesta local reforzada y probada con el emulador RTDB; no se publico ni se probo contra Firebase remoto. El cliente de `src/firebase.js` no demuestra que RTDB exista o que Email/Password este habilitado.
 
 ## Rutas y contrato de programacion
 
@@ -12,6 +12,8 @@ La fuente canonica que usan `src/scheduling.js` y `src/main.js` es:
 - Proyeccion: `publicData/schedules/<fecha>/<reunion>`.
 
 El registro privado contiene `assignments`, `people`, `tasks`, `arrival`, `dress`, `dressColor` y `notes`. Al guardarlo se agregan `updatedAt` y `updatedBy`. Las asignaciones y la lista de personas contienen nombres; las notas y tareas son texto libre; el UID identifica al editor. Esos campos permanecen privados.
+
+La propuesta valida los seis campos de detalle y metadatos requeridos; asignaciones con puestos conocidos; personas como lista de hasta 100 nombres; tareas como lista de hasta 100 objetos con texto, estado booleano y responsable; límites de longitud por texto; y `updatedBy` igual al UID autenticado. Rechaza campos adicionales y elimina la posibilidad de borrar el nodo completo de una programación mediante las reglas.
 
 La proyeccion publica admite solo `published` y `assignments` (si no hay puestos asignados, RTDB puede omitir el objeto vacio):
 
@@ -55,14 +57,18 @@ El primer admin debe crearse manualmente por el propietario: habilitar Email/Pas
 `node scripts/validate-firebase-rules-proposal.mjs` verifica JSON, rutas y condiciones esperadas, pero no ejecuta el motor de reglas. La suite de `security-tests` usa identidades y datos sinteticos contra el emulador RTDB local; el proyecto `demo-...` evita servicios reales. El comando es:
 
 ```powershell
-cd security-tests
-$env:XDG_CONFIG_HOME = Join-Path $env:TEMP 'cmb-rtdb-firebase-config'
-$env:FIREBASE_EMULATORS_PATH = Join-Path $env:TEMP 'cmb-rtdb-firebase-emulators'
+Set-Location security-tests
+$env:FIREBASE_EMULATORS_PATH = Join-Path $PWD '.firebase-emulators'
+$env:XDG_CONFIG_HOME = Join-Path $PWD '.test-config'
 npm run test:emulator
 ```
 
-En la ultima ejecucion local de esta suite, los 24 casos pasaron (0 fallos), incluida la lectura anonima de una proyeccion publicada, el rechazo de borradores/campos privados, la restriccion de publicacion a administradores y el bloqueo de la fuente privada mientras una vista esta publicada. Esto no demuestra conexion ni reglas remotas.
+El 30 de octubre de 2026, la suite del emulador paso 25 pruebas (0 fallos). Incluye lectura anonima de una proyeccion publicada, rechazo de lectura/escritura privada para visitantes, edicion privada por editores, publicacion exclusiva por administradores, rechazo de autoasignacion de roles, validacion de `updatedBy`, campos adicionales y bloqueo de la fuente mientras una vista esta publicada. La validacion estatica tambien paso. Esto no demuestra conexion ni reglas remotas.
 
 La prueba remota queda pendiente de la configuracion del propietario y la aprobacion de reglas. No se debe publicar `database.rules.proposed.json` automaticamente ni abrir reglas de produccion para probar.
+
+## Riesgo pendiente para la siguiente fase
+
+El guardado de una programacion privada y la sincronizacion de `publicData` siguen siendo dos transacciones separadas de RTDB. Si la primera se confirma y la segunda falla, la fuente privada queda guardada mientras la proyeccion publica puede permanecer desfasada o no publicada. La interfaz informa el fallo y permite reintentar; evaluar una estrategia de consistencia/reintentos es trabajo separado. No se modifico el codigo de la aplicacion en esta fase.
 
 Para retirar la pagina diagnostica local se eliminan `firebase-diagnostics.html` y `src/firebase-diagnostics.js`; la propuesta y sus pruebas se pueden conservar. No se deben borrar datos de `localStorage`.

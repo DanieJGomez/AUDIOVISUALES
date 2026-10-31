@@ -1,19 +1,19 @@
-{
-  "name": "cmb-audiovisuales",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "test": "node --test tests/*.test.mjs",
-    "test:unit": "node --test tests/assignment-conflicts.test.mjs",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "firebase": "^13.1.0"
-  },
-  "devDependencies": {
-    "vite": "^7.0.0"
+  {
+    "name": "cmb-audiovisuales",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "test": "node --test tests/*.test.mjs",
+      "test:unit": "node --test tests/assignment-conflicts.test.mjs",
+      "preview": "vite preview"
+    },
+    "dependencies": {
+      "firebase": "^13.1.0"
+    },
+    "devDependencies": {
+      "vite": "^7.0.0"
+    }
   }
-}
