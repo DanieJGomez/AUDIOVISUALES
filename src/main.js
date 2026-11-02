@@ -353,10 +353,12 @@ function applyPublicProjection(projection) {
         ? { ...projection.assignments }
         : {};
     state.assignments = { ...state.assignments, [route.meeting]: assignments };
-    state.tasks = [];
+    state.tasks = projection?.published === true && Array.isArray(projection.tasks)
+        ? [...projection.tasks]
+        : [];
     $('generalNotes').value = '';
     $('dress').value = '';
-    renderTasks([]);
+    renderTasks(state.tasks);
     renderAssignments();
     renderMap();
     updateEditorControls();
@@ -488,7 +490,7 @@ function watchSchedule(route) {
             scheduleReadReady = true;
             applyPublicProjection(value);
             $('cloudStatus').textContent = value?.published === true
-                ? `Asignaciones publicadas · ${route.date} · ${getMeetingLabel(route.meeting)}`
+                ? `Programación y tareas publicadas · ${route.date} · ${getMeetingLabel(route.meeting)}`
                 : 'Esta programación todavía no se ha publicado.';
             updateEditorControls();
         }, (error) => {
@@ -1177,15 +1179,6 @@ $('saveBtn').addEventListener('click', async () => {
         return;
     }
 
-    const assignments = state.assignments?.[meetingKey()] || {};
-    const conflicts = findAssignmentConflicts(assignments, roles);
-    if (conflicts.length) {
-        const messages = conflicts.map(({ person, firstRole, secondRole }) => `${person}: ${firstRole} y ${secondRole}`);
-        alert(`Hay asignaciones incompatibles:\n${messages.join('\n')}\n\nAlabanza y prédica sí pueden tener responsables distintos.`);
-        updateSaveStatus('Copia local guardada. Revisa las asignaciones antes de compartirlas.');
-        return;
-    }
-
     const route = activeRoute || selectedRoute();
     if (projectionBaseline?.published === true && !confirm('Al guardar, la vista publica pasara a no publicada. Un administrador tendra que aprobarla de nuevo. Continuar?')) return;
     const payload = {
@@ -1256,7 +1249,7 @@ $('saveBtn').addEventListener('click', async () => {
 
 $('publishScheduleBtn').addEventListener('click', async () => {
     if (!isAdmin || !scheduleBaseline || scheduleDirty || !canEditSchedule()) return;
-    if (!confirm('Esto hara publicos unicamente los nombres asignados a puestos en esta reunion. No publicara lista de personas, tareas, horario, vestimenta, avisos ni UID. Confirmas la publicacion?')) return;
+    if (!confirm('Esto hará públicos únicamente las asignaciones y tareas aprobadas de esta reunión. No publicará la lista completa de personas, horario, vestimenta, notas ni UID. ¿Confirmas la publicación?')) return;
 
     const route = activeRoute || selectedRoute();
     isSaving = true;
@@ -1271,8 +1264,8 @@ $('publishScheduleBtn').addEventListener('click', async () => {
             return;
         }
         projectionBaseline = result.snapshot.val();
-        $('cloudStatus').textContent = 'Publicacion confirmada: solo se exponen las asignaciones de esta reunion.';
-        updateSaveStatus('La programacion publica ya muestra las asignaciones aprobadas.');
+        $('cloudStatus').textContent = 'Publicación confirmada: solo se exponen las asignaciones y tareas aprobadas de esta reunión.';
+        updateSaveStatus('La programación pública ya muestra las asignaciones y tareas aprobadas.');
     } catch (error) {
         $('cloudStatus').textContent = `No se pudo publicar la proyeccion (${error?.code || 'error'}).`;
         console.error('Error publicando la proyeccion:', error);
@@ -1315,7 +1308,6 @@ $('addTask').addEventListener('click', () => {
     $('extraTaskAssignee').value = '';
     markScheduleDirty();
 });
-
 
 try {
     const saved = localStorage.getItem('cmbAvPrototype');
