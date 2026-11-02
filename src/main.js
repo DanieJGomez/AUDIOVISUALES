@@ -14,6 +14,9 @@ import {
     saveScheduleIfUnchanged,
     saveScheduleProjectionIfUnchanged,
     publishScheduleProjectionIfUnchanged,
+    initializePublicMembersIfMissing,
+    normalizePublicMembers,
+    subscribeToPublicMembers,
     subscribeToPublicSchedule,
     subscribeToSchedule,
 } from './scheduling.js';
@@ -85,6 +88,7 @@ let state = {
     people: [],
     tasks: []
 };
+let sharedPeople = [];
 
 const $ = id => document.getElementById(id);
 if (!$('serviceDate').value) {
@@ -103,6 +107,7 @@ let scheduleDirty = false;
 let scheduleConflict = false;
 let scheduleReadReady = false;
 let projectionReadReady = false;
+let membersReadReady = false;
 let isSaving = false;
 let isAdmin = false;
 let localTestMode = false;
@@ -185,7 +190,8 @@ function selectedRoute() {
 }
 
 function canEditSchedule() {
-    return localTestMode || (isEditor && databaseOnline && scheduleReadReady && projectionReadReady && !scheduleConflict && !isSaving);
+    return localTestMode || (isEditor && databaseOnline && membersReadReady
+        && scheduleReadReady && projectionReadReady && !scheduleConflict && !isSaving);
 }
 
 function stableJson(value) {
@@ -254,7 +260,6 @@ function scheduleRecord(route = selectedRoute()) {
 
     return {
         assignments,
-        people: Array.isArray(state.people) ? [...state.people] : [],
         tasks,
         arrival: `${arrivalHour.value}:${arrivalMinute.value} ${$('arrivalPeriod').value}`,
         dress: $('dress').value,
@@ -317,7 +322,6 @@ function applyScheduleRecord(record) {
                 ? { ...record.assignments }
                 : {}
         };
-        state.people = Array.isArray(record.people) ? [...record.people] : [];
         state.tasks = Array.isArray(record.tasks) ? [...record.tasks] : [];
         setArrivalTime(typeof record.arrival === 'string' ? record.arrival : exampleDetails.arrival);
         $('dress').value = typeof record.dress === 'string' ? record.dress : exampleDetails.dress;
@@ -325,7 +329,6 @@ function applyScheduleRecord(record) {
         $('generalNotes').value = typeof record.notes === 'string' ? record.notes : '';
         renderTasks(state.tasks);
     } else {
-        state.people = [];
         state.tasks = [];
         state.assignments = {
             ...state.assignments,
@@ -349,7 +352,6 @@ function applyPublicProjection(projection) {
         ? { ...projection.assignments }
         : {};
     state.assignments = { ...state.assignments, [route.meeting]: assignments };
-    state.people = [...new Set(Object.values(assignments).filter((name) => typeof name === 'string' && name))];
     state.tasks = [];
     $('generalNotes').value = '';
     $('dress').value = '';
@@ -455,6 +457,7 @@ function enterLocalTestMode() {
 function exitLocalTestMode() {
     if (scheduleDirty) saveLocalTestDraft(activeRoute || selectedRoute());
     localTestMode = false;
+    state.people = [...sharedPeople];
     scheduleDirty = false;
     activeRoute = selectedRoute();
     updateEditorControls();
@@ -599,6 +602,12 @@ function checkEditorAuthorization(user, sequence) {
             ? `Sesión de edición autorizada: ${user.email || user.uid}`
             : `Sesión iniciada (${user.email || user.uid}), sin autorización para editar.`;
         updateEditorControls();
+        if (isAdmin) {
+            initializePublicMembersIfMissing(PREDEFINED_PEOPLE).catch((error) => {
+                $('cloudStatus').textContent = 'No se pudo inicializar la lista compartida de personas.';
+                console.error('Error inicializando publicData/members:', error);
+            });
+        }
         if (activeRoute) watchSchedule(activeRoute);
     }).catch((error) => {
         if (sequence !== authCheckSequence) return;
@@ -610,6 +619,38 @@ function checkEditorAuthorization(user, sequence) {
         if (activeRoute) watchSchedule(activeRoute);
     });
 }
+
+subscribeToPublicMembers((value) => {
+    const members = normalizePublicMembers(value);
+    if (members === null) {
+        sharedPeople = [];
+        if (!localTestMode) state.people = [];
+        membersReadReady = false;
+        $('authStatus').textContent = value === null
+            ? 'La lista compartida de personas aún no está inicializada.'
+            : 'La lista compartida de personas tiene un formato inválido.';
+        if (value !== null) {
+            console.error('Formato inválido en publicData/members:', value);
+        }
+    } else {
+        sharedPeople = members;
+        if (!localTestMode) state.people = [...sharedPeople];
+        membersReadReady = true;
+        if (!currentUser) {
+            $('authStatus').textContent = 'La consulta pública no requiere iniciar sesión.';
+        } else if (isEditor) {
+            $('authStatus').textContent = `Sesión de edición autorizada: ${currentUser.email || currentUser.uid}`;
+        }
+    }
+    renderAssignments();
+    refreshTaskAssigneeOptions();
+    updateEditorControls();
+}, (error) => {
+    membersReadReady = false;
+    $('authStatus').textContent = 'No se pudo leer la lista compartida de personas.';
+    console.error('Error leyendo publicData/members:', error);
+    updateEditorControls();
+});
 
 subscribeToAuthState((user) => {
     currentUser = user;
@@ -1244,7 +1285,7 @@ $('resetBtn').addEventListener('click', () => {
     if (confirm('Vaciar la programacion privada de esta reunion? Guarda para confirmar el cambio.')) {
         state = {
             assignments: cloneAssignments(initial),
-            people: localTestMode ? [...localTestPeople] : [],
+            people: [...state.people],
             tasks: []
         };
         $('extraTaskAssignee').value = '';
@@ -1298,7 +1339,7 @@ try {
             state = {
                 ...d.state,
                 assignments: cloneAssignments(d.state.assignments),
-                people: Array.isArray(d.state.people) ? d.state.people : state.people,
+                people: [...sharedPeople],
                 tasks: Array.isArray(d.state.tasks) ? d.state.tasks : []
             };
         }

@@ -10,6 +10,30 @@ const PUBLIC_ASSIGNMENT_KEYS = [
   'stageFirst', 'stageSermon',
 ];
 
+export function normalizePublicMembers(value) {
+  let members;
+  if (Array.isArray(value)) {
+    members = value;
+  } else if (value && typeof value === 'object') {
+    const keys = Object.keys(value);
+    if (keys.length > 100 || keys.some((key) => !/^(0|[1-9]\d*)$/.test(key))) {
+      return null;
+    }
+    keys.sort((left, right) => Number(left) - Number(right));
+    if (keys.some((key, index) => Number(key) !== index)) return null;
+    members = keys.map((key) => value[key]);
+  } else {
+    return null;
+  }
+
+  if (members.length > 100 || members.some((member) => (
+    typeof member !== 'string' || !member.trim()
+  ))) {
+    return null;
+  }
+  return [...members];
+}
+
 function schedulePath(date, meeting) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     throw new TypeError('La fecha debe tener el formato YYYY-MM-DD.');
@@ -42,6 +66,15 @@ export function createScheduleProjection(schedule, published = false) {
   return { published: published === true, assignments };
 }
 
+export function initializePublicMembersIfMissing(members) {
+  if (!Array.isArray(members) || members.some((member) => (
+    typeof member !== 'string' || !member.trim()
+  ))) {
+    throw new TypeError('La lista de personas debe ser un arreglo de nombres no vacíos.');
+  }
+  return writeDataIfUnchanged('publicData/members', members, null);
+}
+
 export function getSchedule(date, meeting) {
   return readData(schedulePath(date, meeting));
 }
@@ -56,6 +89,10 @@ export function subscribeToSchedule(date, meeting, callback, onError) {
 
 export function subscribeToPublicSchedule(date, meeting, callback, onError) {
   return subscribeToData(publicSchedulePath(date, meeting), callback, onError);
+}
+
+export function subscribeToPublicMembers(callback, onError) {
+  return subscribeToData('publicData/members', callback, onError);
 }
 
 export function saveScheduleProjectionIfUnchanged(date, meeting, schedule, baseline) {
