@@ -330,19 +330,6 @@ padding:4px 8px;
 font-size:11px;
 font-weight:700;
 }
-.colorrow{
-display:flex;
-align-items:center;
-gap:10px;
-}
-.colorrow input{
-width:48px;
-height:38px;
-padding:3px;
-border:1px solid var(--line);
-border-radius:8px;
-background:#fff;
-}
 .status{
 font-size:12px;
 color:var(--muted);

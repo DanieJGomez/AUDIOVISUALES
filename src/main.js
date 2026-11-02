@@ -166,10 +166,11 @@ function setArrivalTime(value) {
 }
 
 setArrivalTime('07:00');
+let currentDressColor = '#244a38';
 const exampleDetails = {
     arrival: '07:00 AM',
     dress: $('dress').value,
-    dressColor: $('dressColor').value,
+    dressColor: currentDressColor,
     notes: $('generalNotes').value
 };
 const exampleTasks = Array.from(document.querySelectorAll('#tasks .task')).map((item) => ({
@@ -233,7 +234,7 @@ function updateEditorControls() {
     updateAssignmentConflictStatus(conflicts);
     document.body.classList.toggle('public-view', !isEditor && !localTestMode);
     [
-        'arrivalHour', 'arrivalMinute', 'arrivalPeriod', 'dress', 'dressColor',
+        'arrivalHour', 'arrivalMinute', 'arrivalPeriod', 'dress',
         'generalNotes', 'saveBtn', 'resetBtn', 'extraTask', 'extraTaskAssignee', 'addTask'
     ].forEach((id) => { $(id).disabled = !enabled; });
     $('saveBtn').disabled = !enabled || conflicts.length > 0;
@@ -263,7 +264,7 @@ function scheduleRecord(route = selectedRoute()) {
         tasks,
         arrival: `${arrivalHour.value}:${arrivalMinute.value} ${$('arrivalPeriod').value}`,
         dress: $('dress').value,
-        dressColor: $('dressColor').value,
+        dressColor: currentDressColor,
         notes: $('generalNotes').value
     };
 }
@@ -325,7 +326,7 @@ function applyScheduleRecord(record) {
         state.tasks = Array.isArray(record.tasks) ? [...record.tasks] : [];
         setArrivalTime(typeof record.arrival === 'string' ? record.arrival : exampleDetails.arrival);
         $('dress').value = typeof record.dress === 'string' ? record.dress : exampleDetails.dress;
-        $('dressColor').value = typeof record.dressColor === 'string' ? record.dressColor : exampleDetails.dressColor;
+        currentDressColor = typeof record.dressColor === 'string' ? record.dressColor : exampleDetails.dressColor;
         $('generalNotes').value = typeof record.notes === 'string' ? record.notes : '';
         renderTasks(state.tasks);
     } else {
@@ -336,7 +337,7 @@ function applyScheduleRecord(record) {
         };
         setArrivalTime(exampleDetails.arrival);
         $('dress').value = exampleDetails.dress;
-        $('dressColor').value = exampleDetails.dressColor;
+        currentDressColor = exampleDetails.dressColor;
         $('generalNotes').value = exampleDetails.notes;
         renderTasks(exampleTasks);
     }
@@ -380,7 +381,7 @@ function saveLocalSnapshot(route = selectedRoute()) {
         date: route.date,
         arrival: `${arrivalHour.value}:${arrivalMinute.value} ${$('arrivalPeriod').value}`,
         dress: $('dress').value,
-        dressColor: $('dressColor').value,
+        dressColor: currentDressColor,
         notes: $('generalNotes').value
     };
 
@@ -428,7 +429,7 @@ function loadLocalTestDraft(route = selectedRoute()) {
     state.tasks = Array.isArray(record?.tasks) ? [...record.tasks] : [];
     setArrivalTime(typeof record?.arrival === 'string' ? record.arrival : exampleDetails.arrival);
     $('dress').value = typeof record?.dress === 'string' ? record.dress : exampleDetails.dress;
-    $('dressColor').value = typeof record?.dressColor === 'string' ? record.dressColor : exampleDetails.dressColor;
+    currentDressColor = typeof record?.dressColor === 'string' ? record.dressColor : exampleDetails.dressColor;
     $('generalNotes').value = typeof record?.notes === 'string' ? record.notes : '';
     renderTasks(state.tasks);
     renderAssignments();
@@ -1149,7 +1150,7 @@ $('nextDayBtn').addEventListener('click', () => {
 });
 $('todayBtn').addEventListener('click', () => setServiceDate(new Date()));
 
-['arrivalHour', 'arrivalMinute', 'arrivalPeriod', 'dress', 'dressColor', 'generalNotes']
+['arrivalHour', 'arrivalMinute', 'arrivalPeriod', 'dress', 'generalNotes']
     .forEach((id) => $(id).addEventListener('change', markScheduleDirty));
 $('generalNotes').addEventListener('input', markScheduleDirty);
 
@@ -1291,7 +1292,7 @@ $('resetBtn').addEventListener('click', () => {
         $('extraTaskAssignee').value = '';
         setArrivalTime(exampleDetails.arrival);
         $('dress').value = exampleDetails.dress;
-        $('dressColor').value = exampleDetails.dressColor;
+        currentDressColor = exampleDetails.dressColor;
         $('generalNotes').value = exampleDetails.notes;
         renderTasks([]);
         renderAssignments();
@@ -1315,19 +1316,6 @@ $('addTask').addEventListener('click', () => {
     markScheduleDirty();
 });
 
-$('dressColor').addEventListener('input', () => {
-    const names = {
-        '#244a38': 'Verde oscuro',
-        '#ffffff': 'Blanco',
-        '#000000': 'Negro',
-        '#0000ff': 'Azul',
-        '#ff0000': 'Rojo'
-    };
-
-    if (names[$('dressColor').value]) {
-        $('dress').value = names[$('dressColor').value];
-    }
-});
 
 try {
     const saved = localStorage.getItem('cmbAvPrototype');
@@ -1349,7 +1337,7 @@ try {
         }
         if (d.arrival) setArrivalTime(d.arrival);
         if (d.dress) $('dress').value = d.dress;
-        if (d.dressColor) $('dressColor').value = d.dressColor;
+        if (d.dressColor) currentDressColor = d.dressColor;
         if (d.notes) $('generalNotes').value = d.notes;
 
         $('saveStatus').textContent = 'Se cargaron los últimos datos guardados en este navegador.';
